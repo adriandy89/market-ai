@@ -20,6 +20,7 @@ model User {
   disabled          Boolean   @default(false)
   is_email_verified Boolean   @default(false)
   role              Role      @default(USER)
+  language          String    @default("es") @db.VarChar(5)
   created_at        DateTime  @default(dbgenerated("('now'::text)::timestamp with time zone")) @db.Timestamptz(6)
   updated_at        DateTime? @updatedAt @db.Timestamptz(6)
 
@@ -106,6 +107,7 @@ model AnalysisReport {
   @@index([user_id], map: "idx_report_user_id")
   @@index([symbol], map: "idx_report_symbol")
   @@index([created_at], map: "idx_report_created_at")
+  @@index([symbol, timeframe, report_type, created_at], map: "idx_report_lookup")
   @@map("analysis_reports")
 }
 

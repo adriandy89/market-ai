@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { LanguageService, type SupportedLang } from '../services/language.service';
 import type {
   ChangePasswordRequest,
   ForgotPasswordRequest,
@@ -20,6 +21,7 @@ import type {
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl;
+  private readonly langService = inject(LanguageService);
 
   private readonly currentUser = signal<SessionUser | null>(null);
   private readonly loading = signal(true);
@@ -36,6 +38,9 @@ export class AuthService {
         this.http.get<ProfileResponse>(`${this.apiUrl}/auth/profile`),
       );
       this.currentUser.set(response.user);
+      if (response.user?.language) {
+        this.langService.setLanguage(response.user.language as SupportedLang);
+      }
     } catch {
       this.currentUser.set(null);
     } finally {

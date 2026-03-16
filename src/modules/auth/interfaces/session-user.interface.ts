@@ -6,4 +6,5 @@ export interface SessionUser {
     name: string;
     disabled: boolean;
     role: Role;
+    language: string;
 }

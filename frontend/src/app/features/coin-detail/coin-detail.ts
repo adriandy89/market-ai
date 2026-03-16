@@ -1,22 +1,30 @@
-import { ChangeDetectionStrategy, Component, inject, signal, viewChild, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject, signal, computed, viewChild, OnInit } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { DecimalPipe, DatePipe } from '@angular/common';
 import { CryptoApiService, type Kline } from '../../core/services/crypto.service';
 import { AnalysisApiService } from '../../core/services/analysis.service';
-import { AiApiService } from '../../core/services/ai.service';
+import { AiApiService, type AiReport } from '../../core/services/ai.service';
+import { MarketContextApiService, type SentimentContext, type NewsItem } from '../../core/services/market-context.service';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { TradingChart } from '../../shared/trading-chart/trading-chart';
 import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format';
 
 @Component({
   selector: 'app-coin-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TradingChart],
+  imports: [TradingChart, DecimalPipe, DatePipe, RouterLink, TranslocoPipe],
   template: `
     <div class="animate-fade-in">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold">{{ symbol() }} Analysis</h1>
-        <button (click)="onGenerateReport()" class="btn-primary" [disabled]="generating()">
-          {{ generating() ? 'Generating...' : 'Generate AI Report' }}
-        </button>
+        <h1 class="text-2xl font-bold">{{ symbol() }} {{ 'coin.analysis' | transloco }}</h1>
+        <div class="flex gap-2">
+          <button (click)="onGenerateReport()" class="btn-primary" [disabled]="generating()">
+            {{ generating() ? ('coin.generating' | transloco) : ('coin.ai_report' | transloco) }}
+          </button>
+          <button (click)="onGenerateComprehensive()" class="btn-primary !bg-[var(--color-accent)] !text-[var(--color-background)]" [disabled]="generatingComprehensive()">
+            {{ generatingComprehensive() ? ('coin.analyzing' | transloco) : ('coin.comprehensive_report' | transloco) }}
+          </button>
+        </div>
       </div>
 
       <!-- Price Card -->
@@ -31,6 +39,36 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
           <p class="text-sm text-[var(--color-muted-foreground)] mt-1">
             Vol: \${{ fc(price()!.volume24h) }} · MCap: \${{ fc(price()!.marketCap) }}
           </p>
+        </div>
+      }
+
+      <!-- Sentiment Mini-Card -->
+      @if (sentiment()) {
+        <div class="card mb-6">
+          <div class="flex items-center gap-6 text-sm">
+            <div>
+              <span class="text-[var(--color-muted-foreground)]">{{ 'coin.fear_greed' | transloco }}</span>
+              <span class="ml-2 font-bold font-mono text-lg"
+                [class]="sentiment()!.fearGreedIndex.value > 60 ? 'text-[var(--color-bull)]' : sentiment()!.fearGreedIndex.value < 40 ? 'text-[var(--color-bear)]' : 'text-[var(--color-accent)]'">
+                {{ sentiment()!.fearGreedIndex.value }}
+              </span>
+              <span class="ml-1 text-[var(--color-muted-foreground)]">({{ sentiment()!.fearGreedIndex.classification }})</span>
+            </div>
+            @if (sentiment()!.globalMarket.btcDominance) {
+              <div>
+                <span class="text-[var(--color-muted-foreground)]">{{ 'coin.btc_dom' | transloco }}</span>
+                <span class="ml-2 font-mono font-medium">{{ sentiment()!.globalMarket.btcDominance | number:'1.1-1' }}%</span>
+              </div>
+            }
+            @if (sentiment()!.globalMarket.marketCapChange24h) {
+              <div>
+                <span class="text-[var(--color-muted-foreground)]">{{ 'coin.market_24h' | transloco }}</span>
+                <span class="ml-2 font-mono" [class]="sentiment()!.globalMarket.marketCapChange24h >= 0 ? 'price-up' : 'price-down'">
+                  {{ sentiment()!.globalMarket.marketCapChange24h >= 0 ? '+' : '' }}{{ sentiment()!.globalMarket.marketCapChange24h | number:'1.1-2' }}%
+                </span>
+              </div>
+            }
+          </div>
         </div>
       }
 
@@ -54,7 +92,7 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Technical Indicators -->
         <div class="card">
-          <h2 class="text-lg font-semibold mb-4">Technical Indicators</h2>
+          <h2 class="text-lg font-semibold mb-4">{{ 'coin.technical_indicators' | transloco }}</h2>
           @if (indicators()) {
             <div class="space-y-3 text-sm">
               @if (indicators()!.rsi) {
@@ -103,7 +141,7 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
 
         <!-- Support / Resistance -->
         <div class="card">
-          <h2 class="text-lg font-semibold mb-4">Support & Resistance</h2>
+          <h2 class="text-lg font-semibold mb-4">{{ 'coin.support_resistance' | transloco }}</h2>
           @if (levels()) {
             <div class="space-y-2 text-sm">
               @for (r of levels()!.resistance; track r.level) {
@@ -113,7 +151,7 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
                 </div>
               }
               <div class="flex justify-between font-semibold border-y border-[var(--color-border)] py-2 my-2">
-                <span>Pivot</span>
+                <span>{{ 'coin.pivot' | transloco }}</span>
                 <span class="font-mono">\${{ fp(levels()!.pivot) }}</span>
               </div>
               @for (s of levels()!.support; track s.level) {
@@ -132,7 +170,7 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
       <!-- Patterns -->
       @if (patterns() && patterns()!.length > 0) {
         <div class="card mt-6">
-          <h2 class="text-lg font-semibold mb-4">Detected Patterns</h2>
+          <h2 class="text-lg font-semibold mb-4">{{ 'coin.detected_patterns' | transloco }}</h2>
           <div class="flex flex-wrap gap-2">
             @for (p of patterns()!; track p.name + p.index) {
               <span class="px-3 py-1 rounded text-xs font-medium"
@@ -143,6 +181,70 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
           </div>
         </div>
       }
+
+      <!-- News Feed -->
+      @if (news().length > 0) {
+        <div class="card mt-6">
+          <h2 class="text-lg font-semibold mb-4">{{ 'coin.recent_news' | transloco }}</h2>
+          <div class="space-y-3">
+            @for (n of news(); track n.url) {
+              <a [href]="n.url" target="_blank" rel="noopener" class="flex items-start gap-3 text-sm hover:bg-[var(--color-muted)]/30 rounded p-2 -mx-2 transition-colors">
+                <span class="w-2 h-2 rounded-full mt-1.5 shrink-0"
+                  [class]="n.sentiment === 'positive' ? 'bg-[var(--color-bull)]' : n.sentiment === 'negative' ? 'bg-[var(--color-bear)]' : 'bg-[var(--color-muted-foreground)]'"></span>
+                <div class="min-w-0">
+                  <p class="text-[var(--color-foreground)] line-clamp-1">{{ n.title }}</p>
+                  <span class="text-xs text-[var(--color-muted-foreground)]">{{ n.source }}</span>
+                </div>
+              </a>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Report History -->
+      <div class="card mt-6">
+        <h2 class="text-lg font-semibold mb-4">{{ 'coin.report_history' | transloco }}</h2>
+        @if (loadingReports()) {
+          <p class="text-[var(--color-muted-foreground)] text-sm">{{ 'common.loading_reports' | transloco }}</p>
+        } @else if (reportHistory().length === 0) {
+          <p class="text-[var(--color-muted-foreground)] text-sm">{{ 'coin.no_reports' | transloco }} {{ symbol() }}.</p>
+        } @else {
+          <div class="space-y-2">
+            @for (r of reportHistory(); track r.id) {
+              <a [routerLink]="['/reports', r.id]"
+                 class="flex items-center justify-between text-sm hover:bg-[var(--color-muted)]/30 rounded p-2 -mx-2 transition-colors">
+                <div class="flex items-center gap-2 min-w-0">
+                  @if (r.report_type === 'comprehensive') {
+                    <span class="text-xs px-1.5 py-0.5 rounded bg-[var(--color-accent)]/20 text-[var(--color-accent)] shrink-0">Comprehensive</span>
+                  } @else {
+                    <span class="text-xs px-1.5 py-0.5 rounded bg-[var(--color-muted)] text-[var(--color-muted-foreground)] shrink-0">Standard</span>
+                  }
+                  <span class="text-[var(--color-muted-foreground)] shrink-0">{{ r.timeframe === 'multi' ? '4h·1d·1w' : r.timeframe }}</span>
+                  <span class="truncate text-[var(--color-foreground)]">{{ r.content?.aiSummary || r.content?.aiAnalysis?.executiveSummary || r.content?.aiAnalysis?.summary || '' }}</span>
+                </div>
+                <span class="text-xs text-[var(--color-muted-foreground)] shrink-0 ml-3">{{ r.created_at | date:'short' }}</span>
+              </a>
+            }
+          </div>
+
+          <!-- Pagination -->
+          @if (reportTotal() > 5) {
+            <div class="flex items-center justify-between mt-4 pt-3 border-t border-[var(--color-border)]">
+              <button (click)="loadReportHistory(reportPage() - 1)" [disabled]="reportPage() <= 1"
+                class="text-sm text-[var(--color-primary)] disabled:opacity-30 disabled:cursor-default hover:underline">
+                &larr; Prev
+              </button>
+              <span class="text-xs text-[var(--color-muted-foreground)]">
+                Page {{ reportPage() }} of {{ reportTotalPages() }}
+              </span>
+              <button (click)="loadReportHistory(reportPage() + 1)" [disabled]="reportPage() >= reportTotalPages()"
+                class="text-sm text-[var(--color-primary)] disabled:opacity-30 disabled:cursor-default hover:underline">
+                Next &rarr;
+              </button>
+            </div>
+          }
+        }
+      </div>
     </div>
   `,
 })
@@ -152,6 +254,7 @@ export class CoinDetail implements OnInit {
   private readonly cryptoApi = inject(CryptoApiService);
   private readonly analysisApi = inject(AnalysisApiService);
   private readonly aiApi = inject(AiApiService);
+  private readonly marketContextApi = inject(MarketContextApiService);
 
   private tradingChart = viewChild<TradingChart>('tradingChart');
 
@@ -163,6 +266,14 @@ export class CoinDetail implements OnInit {
   klines = signal<Kline[]>([]);
   timeframe = signal('4h');
   generating = signal(false);
+  generatingComprehensive = signal(false);
+  sentiment = signal<SentimentContext | null>(null);
+  news = signal<NewsItem[]>([]);
+  reportHistory = signal<AiReport[]>([]);
+  reportPage = signal(1);
+  reportTotal = signal(0);
+  loadingReports = signal(false);
+  reportTotalPages = computed(() => Math.ceil(this.reportTotal() / 5) || 1);
 
   async ngOnInit() {
     const sym = this.route.snapshot.paramMap.get('symbol')?.toUpperCase() || '';
@@ -170,16 +281,21 @@ export class CoinDetail implements OnInit {
 
     const tf = this.timeframe();
     // Load all data in parallel
-    const [priceData, klinesData] = await Promise.allSettled([
+    const [priceData, klinesData, sentimentData, newsData] = await Promise.allSettled([
       this.cryptoApi.getCoinPrice(sym),
       this.cryptoApi.getKlines(sym, tf, 300),
+      this.marketContextApi.getSentiment(),
+      this.marketContextApi.getNews(sym),
     ]);
 
     if (priceData.status === 'fulfilled') this.price.set(priceData.value);
     if (klinesData.status === 'fulfilled') this.klines.set(klinesData.value?.data || []);
+    if (sentimentData.status === 'fulfilled') this.sentiment.set(sentimentData.value);
+    if (newsData.status === 'fulfilled') this.news.set(newsData.value?.items || []);
 
-    // Load analysis data with timeframe
+    // Load analysis data and report history
     await this.loadAnalysis(sym, tf);
+    this.loadReportHistory();
   }
 
   async onTimeframeChange(tf: string) {
@@ -218,15 +334,43 @@ export class CoinDetail implements OnInit {
     }
   }
 
+  async loadReportHistory(page = 1) {
+    this.loadingReports.set(true);
+    try {
+      const result = await this.aiApi.getReports(page, 5, this.symbol());
+      this.reportHistory.set(result.data);
+      this.reportPage.set(page);
+      this.reportTotal.set(result.meta.itemCount);
+    } catch (err) {
+      console.error('Failed to load report history:', err);
+    } finally {
+      this.loadingReports.set(false);
+    }
+  }
+
   async onGenerateReport() {
     this.generating.set(true);
     try {
       const report = await this.aiApi.generateReport(this.symbol(), this.timeframe());
+      await this.loadReportHistory();
       this.router.navigate(['/reports', report.id]);
     } catch (err) {
       console.error('Failed to generate report:', err);
     } finally {
       this.generating.set(false);
+    }
+  }
+
+  async onGenerateComprehensive() {
+    this.generatingComprehensive.set(true);
+    try {
+      const report = await this.aiApi.generateComprehensiveReport(this.symbol());
+      await this.loadReportHistory();
+      this.router.navigate(['/reports', report.id]);
+    } catch (err) {
+      console.error('Failed to generate comprehensive report:', err);
+    } finally {
+      this.generatingComprehensive.set(false);
     }
   }
 

@@ -12,6 +12,7 @@ export class UserService {
     updated_at: true,
     created_at: true,
     role: true,
+    language: true,
     is_email_verified: true,
   };
 
@@ -73,6 +74,17 @@ export class UserService {
       data: { disabled: false },
     });
     return { ok: true };
+  }
+
+  async updateLanguage(userId: string, language: string) {
+    if (!['es', 'en'].includes(language)) {
+      throw new Error('Invalid language. Supported: es, en');
+    }
+    await this.dbService.user.update({
+      where: { id: userId },
+      data: { language },
+    });
+    return { ok: true, language };
   }
 
   // ============ SESSION MANAGEMENT ============

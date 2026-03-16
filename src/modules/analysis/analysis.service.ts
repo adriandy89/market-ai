@@ -103,6 +103,10 @@ export class AnalysisService {
   }
 
   async getPatterns(symbol: string, timeframe: string = '4h') {
+    const cacheKey = `analysis:patterns:${symbol}:${timeframe}`;
+    const cached = await this.cacheService.get<any>(cacheKey);
+    if (cached) return cached;
+
     const klines = await this.cryptoService.getKlines(symbol, timeframe, 20);
     if (!klines.data || klines.data.length < 5) {
       return { symbol, patterns: [] };
@@ -146,10 +150,16 @@ export class AnalysisService {
       }
     }
 
-    return { symbol, patterns };
+    const result = { symbol, patterns };
+    await this.cacheService.set(cacheKey, result, 300);
+    return result;
   }
 
   async getSupportResistance(symbol: string, timeframe: string = '4h') {
+    const cacheKey = `analysis:levels:${symbol}:${timeframe}`;
+    const cached = await this.cacheService.get<any>(cacheKey);
+    if (cached) return cached;
+
     const klines = await this.cryptoService.getKlines(symbol, timeframe, 5);
     if (!klines.data || klines.data.length < 2) {
       return { symbol, support: [], resistance: [] };
@@ -165,7 +175,7 @@ export class AnalysisService {
     const r3 = last.high + 2 * (pivot - last.low);
     const s3 = last.low - 2 * (last.high - pivot);
 
-    return {
+    const result = {
       symbol,
       pivot,
       resistance: [
@@ -178,6 +188,127 @@ export class AnalysisService {
         { level: 'S2', price: s2 },
         { level: 'S3', price: s3 },
       ],
+    };
+
+    await this.cacheService.set(cacheKey, result, 300);
+    return result;
+  }
+
+  async getMultiTimeframeAnalysis(symbol: string) {
+    const timeframes = ['4h', '1d', '1w'] as const;
+
+    const [tf4h, tf1d, tf1w] = await Promise.all(
+      timeframes.map((tf) =>
+        Promise.all([
+          this.getIndicators(symbol, tf),
+          this.getPatterns(symbol, tf),
+          this.getSupportResistance(symbol, tf),
+        ]),
+      ),
+    );
+
+    const data = {
+      '4h': { indicators: tf4h[0], patterns: tf4h[1], levels: tf4h[2] },
+      '1d': { indicators: tf1d[0], patterns: tf1d[1], levels: tf1d[2] },
+      '1w': { indicators: tf1w[0], patterns: tf1w[1], levels: tf1w[2] },
+    };
+
+    const confluence = this.computeConfluence(data);
+
+    return { symbol, timeframes: data, confluence };
+  }
+
+  private computeConfluence(data: Record<string, { indicators: any; patterns: any; levels: any }>) {
+    const biases: Record<string, string> = {};
+    const observations: string[] = [];
+
+    for (const [tf, { indicators }] of Object.entries(data)) {
+      const ind = indicators?.indicators;
+      if (!ind) {
+        biases[tf] = 'neutral';
+        continue;
+      }
+
+      let bullish = 0;
+      let bearish = 0;
+
+      // RSI
+      if (ind.rsi?.signal === 'oversold') bullish++;
+      if (ind.rsi?.signal === 'overbought') bearish++;
+
+      // MACD
+      if (ind.macd?.trend === 'bullish') bullish++;
+      if (ind.macd?.trend === 'bearish') bearish++;
+
+      // Stochastic
+      if (ind.stochastic?.signal === 'oversold') bullish++;
+      if (ind.stochastic?.signal === 'overbought') bearish++;
+
+      // EMA alignment: price above EMA50 = bullish
+      const price = indicators?.currentPrice;
+      if (price && ind.ema?.ema50) {
+        if (price > ind.ema.ema50) bullish++;
+        else bearish++;
+      }
+
+      // Bollinger
+      if (ind.bollingerBands?.position === 'below_lower') bullish++;
+      if (ind.bollingerBands?.position === 'above_upper') bearish++;
+
+      biases[tf] = bullish > bearish ? 'bullish' : bearish > bullish ? 'bearish' : 'neutral';
+    }
+
+    // Cross-timeframe observations
+    const rsiSignals = Object.entries(data)
+      .map(([tf, d]) => ({ tf, signal: d.indicators?.indicators?.rsi?.signal }))
+      .filter((r) => r.signal);
+
+    const uniqueRsi = new Set(rsiSignals.map((r) => r.signal));
+    if (uniqueRsi.size > 1) {
+      observations.push(
+        `RSI divergence: ${rsiSignals.map((r) => `${r.tf}=${r.signal}`).join(', ')}`,
+      );
+    }
+
+    const macdTrends = Object.entries(data)
+      .map(([tf, d]) => ({ tf, trend: d.indicators?.indicators?.macd?.trend }))
+      .filter((r) => r.trend);
+
+    const uniqueMacd = new Set(macdTrends.map((r) => r.trend));
+    if (uniqueMacd.size > 1) {
+      observations.push(
+        `MACD divergence: ${macdTrends.map((r) => `${r.tf}=${r.trend}`).join(', ')}`,
+      );
+    }
+
+    // ADX strength across timeframes
+    const adxStrong = Object.entries(data)
+      .filter(([, d]) => d.indicators?.indicators?.adx?.trendStrength === 'strong')
+      .map(([tf]) => tf);
+    if (adxStrong.length > 0) {
+      observations.push(`Strong trend on: ${adxStrong.join(', ')}`);
+    }
+
+    const biasValues = Object.values(biases);
+    const allSame = biasValues.every((b) => b === biasValues[0]);
+
+    let trendAlignment: string;
+    if (allSame && biasValues[0] !== 'neutral') {
+      trendAlignment = `aligned-${biasValues[0]}`;
+    } else if (allSame) {
+      trendAlignment = 'neutral';
+    } else {
+      trendAlignment = 'divergent';
+    }
+
+    const alignedCount = biasValues.filter((b) => b === biasValues[0]).length;
+    const strength = alignedCount === 3 ? 'strong' : alignedCount === 2 ? 'moderate' : 'weak';
+
+    return {
+      trendAlignment,
+      strength,
+      biasPerTimeframe: biases,
+      keyObservations: observations,
     };
   }
 

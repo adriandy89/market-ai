@@ -1,0 +1,95 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "loading_market": "Cargando datos del mercado...",
+    "loading_chart": "Cargando chart...",
+    "loading_indicators": "Cargando indicadores...",
+    "loading_levels": "Cargando niveles...",
+    "loading_report": "Cargando reporte...",
+    "loading_reports": "Cargando reportes...",
+    "prev": "Anterior",
+    "next": "Siguiente",
+    "page": "Pagina",
+    "of": "de"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "reports": "Reportes AI",
+    "profile": "Perfil",
+    "logout": "Cerrar sesion"
+  },
+  "landing": {
+    "subtitle": "Plataforma de analisis de criptomonedas con inteligencia artificial. Datos en tiempo real, indicadores tecnicos, analisis de sentimiento y reportes inteligentes.",
+    "get_started": "Comenzar",
+    "sign_in": "Iniciar Sesion"
+  },
+  "auth": {
+    "sign_in": "Iniciar Sesion",
+    "signing_in": "Iniciando sesion...",
+    "create_account": "Crear Cuenta",
+    "creating": "Creando...",
+    "email": "Email",
+    "password": "Contrasena",
+    "name": "Nombre",
+    "forgot_password": "Olvidaste tu contrasena?",
+    "no_account": "No tienes cuenta?",
+    "sign_up": "Registrate",
+    "has_account": "Ya tienes cuenta?",
+    "account_created": "Cuenta creada! Revisa tu email para verificar tu cuenta.",
+    "password_placeholder": "Min 8 chars, mayuscula, numero, especial",
+    "reset_password": "Restablecer Contrasena",
+    "send_reset": "Enviar Link de Reset",
+    "sending": "Enviando...",
+    "reset_sent": "Si ese email existe, recibiras un link de restablecimiento.",
+    "back_to_login": "Volver al login"
+  },
+  "dashboard": {
+    "welcome": "Bienvenido,",
+    "top_crypto": "Top Criptomonedas",
+    "name": "Nombre",
+    "price": "Precio",
+    "change_24h": "24h %",
+    "change_7d": "7d %",
+    "market_cap": "Cap. Mercado",
+    "analyze": "Analizar"
+  },
+  "coin": {
+    "analysis": "Analisis",
+    "ai_report": "Reporte AI",
+    "comprehensive_report": "Reporte Completo",
+    "generating": "Generando...",
+    "analyzing": "Analizando...",
+    "fear_greed": "Fear & Greed",
+    "btc_dom": "BTC Dom",
+    "market_24h": "Mercado 24h",
+    "technical_indicators": "Indicadores Tecnicos",
+    "support_resistance": "Soporte & Resistencia",
+    "pivot": "Pivote",
+    "detected_patterns": "Patrones Detectados",
+    "recent_news": "Noticias Recientes",
+    "report_history": "Historial de Reportes",
+    "no_reports": "No hay reportes para",
+    "vol": "Vol",
+    "mcap": "MCap"
+  },
+  "reports": {
+    "title": "Reportes AI",
+    "no_reports": "Aun no hay reportes. Genera tu primer analisis AI!",
+    "go_dashboard": "Ir al Dashboard",
+    "back_to_reports": "Volver a Reportes",
+    "price_at_time": "Precio al momento del reporte",
+    "comprehensive": "Completo",
+    "standard": "Estandar"
+  },
+  "profile": {
+    "title": "Perfil",
+    "language": "Idioma",
+    "language_desc": "Selecciona el idioma de la interfaz y los reportes AI",
+    "spanish": "Espanol",
+    "english": "English",
+    "account": "Cuenta",
+    "email": "Email",
+    "name": "Nombre",
+    "member_since": "Miembro desde"
+  }
+}

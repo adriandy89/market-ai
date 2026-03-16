@@ -9,6 +9,7 @@ import { UserModule } from './modules/user/user.module';
 import { CryptoModule } from './modules/crypto/crypto.module';
 import { AnalysisModule } from './modules/analysis/analysis.module';
 import { AiModule } from './modules/ai/ai.module';
+import { MarketContextModule } from './modules/market-context/market-context.module';
 import { VerificationsModule } from './modules/verifications';
 
 @Module({
@@ -49,6 +50,7 @@ import { VerificationsModule } from './modules/verifications';
     // Domain modules
     CryptoModule,
     AnalysisModule,
+    MarketContextModule,
     AiModule,
   ],
   controllers: [],

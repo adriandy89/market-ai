@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthService } from '../../core/auth/auth.service';
 import { CryptoApiService, type CoinMarket } from '../../core/services/crypto.service';
 import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format';
@@ -7,29 +8,28 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
 @Component({
   selector: 'app-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, TranslocoPipe],
   template: `
     <div class="animate-fade-in">
       <h1 class="text-2xl font-bold mb-6">
-        Welcome, <span class="text-[var(--color-primary)]">{{ auth.user()?.name }}</span>
+        {{ 'dashboard.welcome' | transloco }} <span class="text-[var(--color-primary)]">{{ auth.user()?.name }}</span>
       </h1>
 
-      <!-- Top Coins Table -->
       <div class="card mb-6">
-        <h2 class="text-lg font-semibold mb-4">Top Cryptocurrencies</h2>
+        <h2 class="text-lg font-semibold mb-4">{{ 'dashboard.top_crypto' | transloco }}</h2>
         @if (loading()) {
-          <p class="text-[var(--color-muted-foreground)]">Loading market data...</p>
+          <p class="text-[var(--color-muted-foreground)]">{{ 'common.loading_market' | transloco }}</p>
         } @else {
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead>
                 <tr class="text-[var(--color-muted-foreground)] border-b border-[var(--color-border)]">
                   <th class="text-left py-2 pr-4">#</th>
-                  <th class="text-left py-2 pr-4">Name</th>
-                  <th class="text-right py-2 pr-4">Price</th>
-                  <th class="text-right py-2 pr-4">24h %</th>
-                  <th class="text-right py-2 pr-4">7d %</th>
-                  <th class="text-right py-2 pr-4">Market Cap</th>
+                  <th class="text-left py-2 pr-4">{{ 'dashboard.name' | transloco }}</th>
+                  <th class="text-right py-2 pr-4">{{ 'dashboard.price' | transloco }}</th>
+                  <th class="text-right py-2 pr-4">{{ 'dashboard.change_24h' | transloco }}</th>
+                  <th class="text-right py-2 pr-4">{{ 'dashboard.change_7d' | transloco }}</th>
+                  <th class="text-right py-2 pr-4">{{ 'dashboard.market_cap' | transloco }}</th>
                   <th class="text-right py-2"></th>
                 </tr>
               </thead>
@@ -54,7 +54,7 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
                     <td class="py-3 pr-4 text-right font-mono">\${{ formatMarketCap(coin.marketCap) }}</td>
                     <td class="py-3 text-right">
                       <a [routerLink]="['/coin', coin.symbol]" class="text-[var(--color-primary)] hover:underline text-xs">
-                        Analyze
+                        {{ 'dashboard.analyze' | transloco }}
                       </a>
                     </td>
                   </tr>
@@ -79,11 +79,7 @@ export class Dashboard implements OnInit, OnDestroy {
 
   async ngOnInit() {
     await this.loadCoins();
-
-    // Auto-refresh every 60s (matches backend Redis cache TTL)
     this.refreshTimer = setInterval(() => this.loadCoins(), 60_000);
-
-    // Pause when tab hidden, resume when visible
     this.visibilityHandler = () => {
       if (!document.hidden) this.loadCoins();
     };

@@ -1,0 +1,95 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "loading_market": "Loading market data...",
+    "loading_chart": "Loading chart...",
+    "loading_indicators": "Loading indicators...",
+    "loading_levels": "Loading levels...",
+    "loading_report": "Loading report...",
+    "loading_reports": "Loading reports...",
+    "prev": "Prev",
+    "next": "Next",
+    "page": "Page",
+    "of": "of"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "reports": "AI Reports",
+    "profile": "Profile",
+    "logout": "Logout"
+  },
+  "landing": {
+    "subtitle": "AI-powered crypto market analysis platform. Real-time data, technical indicators, sentiment analysis, and intelligent reports — all in one place.",
+    "get_started": "Get Started",
+    "sign_in": "Sign In"
+  },
+  "auth": {
+    "sign_in": "Sign In",
+    "signing_in": "Signing in...",
+    "create_account": "Create Account",
+    "creating": "Creating...",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "forgot_password": "Forgot password?",
+    "no_account": "Don't have an account?",
+    "sign_up": "Sign up",
+    "has_account": "Already have an account?",
+    "account_created": "Account created! Check your email to verify your account.",
+    "password_placeholder": "Min 8 chars, uppercase, number, special",
+    "reset_password": "Reset Password",
+    "send_reset": "Send Reset Link",
+    "sending": "Sending...",
+    "reset_sent": "If that email exists, you'll receive a reset link shortly.",
+    "back_to_login": "Back to login"
+  },
+  "dashboard": {
+    "welcome": "Welcome,",
+    "top_crypto": "Top Cryptocurrencies",
+    "name": "Name",
+    "price": "Price",
+    "change_24h": "24h %",
+    "change_7d": "7d %",
+    "market_cap": "Market Cap",
+    "analyze": "Analyze"
+  },
+  "coin": {
+    "analysis": "Analysis",
+    "ai_report": "AI Report",
+    "comprehensive_report": "Comprehensive Report",
+    "generating": "Generating...",
+    "analyzing": "Analyzing...",
+    "fear_greed": "Fear & Greed",
+    "btc_dom": "BTC Dom",
+    "market_24h": "Market 24h",
+    "technical_indicators": "Technical Indicators",
+    "support_resistance": "Support & Resistance",
+    "pivot": "Pivot",
+    "detected_patterns": "Detected Patterns",
+    "recent_news": "Recent News",
+    "report_history": "Report History",
+    "no_reports": "No reports for",
+    "vol": "Vol",
+    "mcap": "MCap"
+  },
+  "reports": {
+    "title": "AI Reports",
+    "no_reports": "No reports yet. Generate your first AI analysis!",
+    "go_dashboard": "Go to Dashboard",
+    "back_to_reports": "Back to Reports",
+    "price_at_time": "Price at Report Time",
+    "comprehensive": "Comprehensive",
+    "standard": "Standard"
+  },
+  "profile": {
+    "title": "Profile",
+    "language": "Language",
+    "language_desc": "Select the language for the interface and AI reports",
+    "spanish": "Espanol",
+    "english": "English",
+    "account": "Account",
+    "email": "Email",
+    "name": "Name",
+    "member_since": "Member since"
+  }
+}

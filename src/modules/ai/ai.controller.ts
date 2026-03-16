@@ -21,6 +21,19 @@ export class AiController {
       user.id,
       symbol.toUpperCase(),
       timeframe || '4h',
+      user.language || 'es',
+    );
+  }
+
+  @Post('report/:symbol/comprehensive')
+  async generateComprehensiveReport(
+    @GetUserInfo() user: SessionUser,
+    @Param('symbol') symbol: string,
+  ) {
+    return this.aiService.generateComprehensiveReport(
+      user.id,
+      symbol.toUpperCase(),
+      user.language || 'es',
     );
   }
 
@@ -29,11 +42,13 @@ export class AiController {
     @GetUserInfo() user: SessionUser,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('symbol') symbol?: string,
   ) {
     return this.aiService.getUserReports(
       user.id,
       page ? parseInt(page) : 1,
       limit ? parseInt(limit) : 10,
+      symbol?.toUpperCase(),
     );
   }
 

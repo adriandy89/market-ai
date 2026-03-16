@@ -24,10 +24,16 @@ export class AiApiService {
     );
   }
 
-  getReports(page = 1, limit = 10): Promise<{ data: AiReport[]; meta: any }> {
+  generateComprehensiveReport(symbol: string): Promise<AiReport> {
     return firstValueFrom(
-      this.http.get<{ data: AiReport[]; meta: any }>(`${this.api}/ai/reports?page=${page}&limit=${limit}`),
+      this.http.post<AiReport>(`${this.api}/ai/report/${symbol}/comprehensive`, {}),
     );
+  }
+
+  getReports(page = 1, limit = 10, symbol?: string): Promise<{ data: AiReport[]; meta: any }> {
+    let url = `${this.api}/ai/reports?page=${page}&limit=${limit}`;
+    if (symbol) url += `&symbol=${symbol}`;
+    return firstValueFrom(this.http.get<{ data: AiReport[]; meta: any }>(url));
   }
 
   getReport(id: string): Promise<AiReport> {

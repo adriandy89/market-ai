@@ -15,6 +15,7 @@ export class AuthService {
     disabled: true,
     name: true,
     role: true,
+    language: true,
   };
 
   constructor(

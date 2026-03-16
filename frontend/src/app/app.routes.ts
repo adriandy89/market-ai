@@ -59,6 +59,11 @@ export const routes: Routes = [
           import('./features/coin-detail/coin-detail').then((m) => m.CoinDetail),
       },
       {
+        path: 'profile',
+        loadComponent: () =>
+          import('./features/profile/profile').then((m) => m.Profile),
+      },
+      {
         path: 'reports',
         loadComponent: () =>
           import('./features/ai-reports/ai-reports').then((m) => m.AiReports),

@@ -4,6 +4,7 @@ export interface SessionUser {
   name: string;
   disabled: boolean;
   role: string;
+  language: string;
 }
 
 export interface SignInRequest {

@@ -46,6 +46,16 @@ export class UserController {
     return { ok: true };
   }
 
+  // ============ LANGUAGE ============
+
+  @Put('language')
+  async updateLanguage(
+    @GetUserInfo() user: SessionUser,
+    @Body() body: { language: string },
+  ) {
+    return this.userService.updateLanguage(user.id, body.language);
+  }
+
   // ============ ADMIN: USER MANAGEMENT ============
 
   @Get()

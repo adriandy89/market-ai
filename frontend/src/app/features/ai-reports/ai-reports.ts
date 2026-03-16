@@ -1,22 +1,23 @@
 import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { AiApiService, type AiReport } from '../../core/services/ai.service';
 
 @Component({
   selector: 'app-ai-reports',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, DatePipe, TranslocoPipe],
   template: `
     <div class="animate-fade-in">
-      <h1 class="text-2xl font-bold mb-6">AI Reports</h1>
+      <h1 class="text-2xl font-bold mb-6">{{ 'reports.title' | transloco }}</h1>
 
       @if (loading()) {
-        <p class="text-[var(--color-muted-foreground)]">Loading reports...</p>
+        <p class="text-[var(--color-muted-foreground)]">{{ 'common.loading_reports' | transloco }}</p>
       } @else if (reports().length === 0) {
         <div class="card text-center py-12">
-          <p class="text-[var(--color-muted-foreground)] mb-4">No reports yet. Generate your first AI analysis!</p>
-          <a routerLink="/dashboard" class="btn-primary">Go to Dashboard</a>
+          <p class="text-[var(--color-muted-foreground)] mb-4">{{ 'reports.no_reports' | transloco }}</p>
+          <a routerLink="/dashboard" class="btn-primary">{{ 'reports.go_dashboard' | transloco }}</a>
         </div>
       } @else {
         <div class="space-y-3">
@@ -24,16 +25,20 @@ import { AiApiService, type AiReport } from '../../core/services/ai.service';
             <a [routerLink]="['/reports', report.id]"
                class="card block hover:border-[var(--color-primary)]/50 transition-colors cursor-pointer">
               <div class="flex items-center justify-between">
-                <div>
+                <div class="flex items-center gap-2">
                   <span class="font-semibold text-[var(--color-primary)]">{{ report.symbol }}</span>
-                  <span class="text-[var(--color-muted-foreground)] text-sm ml-2">{{ report.timeframe }}</span>
-                  <span class="text-[var(--color-muted-foreground)] text-xs ml-2">{{ report.report_type }}</span>
+                  <span class="text-[var(--color-muted-foreground)] text-sm">{{ report.timeframe === 'multi' ? '4h · 1d · 1w' : report.timeframe }}</span>
+                  @if (report.report_type === 'comprehensive') {
+                    <span class="text-xs px-1.5 py-0.5 rounded bg-[var(--color-accent)]/20 text-[var(--color-accent)]">{{ 'reports.comprehensive' | transloco }}</span>
+                  } @else {
+                    <span class="text-xs px-1.5 py-0.5 rounded bg-[var(--color-muted)] text-[var(--color-muted-foreground)]">{{ 'reports.standard' | transloco }}</span>
+                  }
                 </div>
                 <span class="text-sm text-[var(--color-muted-foreground)]">{{ report.created_at | date:'short' }}</span>
               </div>
-              @if (report.content?.aiAnalysis?.summary) {
+              @if (report.content?.aiSummary || report.content?.aiAnalysis?.executiveSummary || report.content?.aiAnalysis?.summary) {
                 <p class="text-sm text-[var(--color-muted-foreground)] mt-2 line-clamp-2">
-                  {{ report.content.aiAnalysis.summary }}
+                  {{ report.content.aiSummary || report.content.aiAnalysis?.executiveSummary || report.content.aiAnalysis?.summary }}
                 </p>
               }
             </a>
