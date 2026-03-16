@@ -84,7 +84,7 @@ const INDICATORS: IndicatorDef[] = [
     </div>
 
     <!-- Chart container -->
-    <div class="relative w-full rounded border border-[var(--color-border)] overflow-hidden" style="height: 500px;">
+    <div #chartWrapper class="relative w-full rounded border border-[var(--color-border)] overflow-hidden h-[300px] sm:h-[400px] md:h-[500px]">
       <!-- OHLCV Legend overlay -->
       @if (legend()) {
         <div class="absolute top-2 left-3 z-10 flex items-center gap-3 text-xs font-mono pointer-events-none">
@@ -223,7 +223,7 @@ export class TradingChart implements OnDestroy {
 
     this.chart = createChart(container, {
       width: container.clientWidth,
-      height: 500,
+      height: container.parentElement?.clientHeight || container.clientHeight || 500,
       layout: {
         background: { type: ColorType.Solid, color: '#0d1117' },
         textColor: '#6b7280',

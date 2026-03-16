@@ -15,13 +15,13 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
   imports: [TradingChart, DecimalPipe, DatePipe, RouterLink, TranslocoPipe],
   template: `
     <div class="animate-fade-in">
-      <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold">{{ symbol() }} {{ 'coin.analysis' | transloco }}</h1>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <h1 class="text-xl sm:text-2xl font-bold">{{ symbol() }} {{ 'coin.analysis' | transloco }}</h1>
         <div class="flex gap-2">
-          <button (click)="onGenerateReport()" class="btn-primary" [disabled]="generating()">
+          <button (click)="onGenerateReport()" class="btn-primary text-xs sm:text-sm flex-1 sm:flex-initial" [disabled]="generating()">
             {{ generating() ? ('coin.generating' | transloco) : ('coin.ai_report' | transloco) }}
           </button>
-          <button (click)="onGenerateComprehensive()" class="btn-primary !bg-[var(--color-accent)] !text-[var(--color-background)]" [disabled]="generatingComprehensive()">
+          <button (click)="onGenerateComprehensive()" class="btn-primary !bg-[var(--color-accent)] !text-[var(--color-background)] text-xs sm:text-sm flex-1 sm:flex-initial" [disabled]="generatingComprehensive()">
             {{ generatingComprehensive() ? ('coin.analyzing' | transloco) : ('coin.comprehensive_report' | transloco) }}
           </button>
         </div>
@@ -30,8 +30,8 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
       <!-- Price Card -->
       @if (price()) {
         <div class="card mb-6">
-          <div class="flex items-baseline gap-4">
-            <span class="text-3xl font-bold font-mono">\${{ fp(price()!.price) }}</span>
+          <div class="flex items-baseline gap-3 sm:gap-4">
+            <span class="text-2xl sm:text-3xl font-bold font-mono">\${{ fp(price()!.price) }}</span>
             <span class="text-lg font-mono" [class]="price()!.change24h >= 0 ? 'price-up' : 'price-down'">
               {{ price()!.change24h >= 0 ? '+' : '' }}{{ fpct(price()!.change24h) }}%
             </span>
@@ -45,7 +45,7 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
       <!-- Sentiment Mini-Card -->
       @if (sentiment()) {
         <div class="card mb-6">
-          <div class="flex items-center gap-6 text-sm">
+          <div class="flex flex-wrap items-center gap-4 sm:gap-6 text-sm">
             <div>
               <span class="text-[var(--color-muted-foreground)]">{{ 'coin.fear_greed' | transloco }}</span>
               <span class="ml-2 font-bold font-mono text-lg"
@@ -84,11 +84,11 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
           />
         </div>
       } @else if (chartUnavailable()) {
-        <div class="card mb-6 flex items-center justify-center py-12">
+        <div class="card mb-6 flex items-center justify-center py-8 sm:py-12">
           <p class="text-[var(--color-muted-foreground)] text-sm">{{ symbol() }} chart not available on Binance</p>
         </div>
       } @else {
-        <div class="card mb-6 flex items-center justify-center" style="height: 500px;">
+        <div class="card mb-6 flex items-center justify-center h-[300px] sm:h-[400px] md:h-[500px]">
           <p class="text-[var(--color-muted-foreground)]">{{ 'common.loading_chart' | transloco }}</p>
         </div>
       }

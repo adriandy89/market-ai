@@ -17,14 +17,14 @@ import { formatPrice } from '../../../shared/utils/format';
       @if (loading()) {
         <p class="text-[var(--color-muted-foreground)]">{{ 'common.loading_report' | transloco }}</p>
       } @else if (report()) {
-        <div class="flex items-center justify-between mb-6">
-          <h1 class="text-2xl font-bold">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+          <h1 class="text-xl sm:text-2xl font-bold">
             <a [routerLink]="['/coin', report()!.symbol]" class="text-[var(--color-primary)] underline hover:brightness-125 transition-all">{{ report()!.symbol }}</a> Report
             @if (isComprehensive()) {
               <span class="ml-2 text-xs px-2 py-0.5 rounded bg-[var(--color-accent)]/20 text-[var(--color-accent)]">Comprehensive</span>
             }
           </h1>
-          <span class="text-sm text-[var(--color-muted-foreground)]">
+          <span class="text-xs sm:text-sm text-[var(--color-muted-foreground)] shrink-0">
             {{ report()!.created_at | date:'medium' }} · {{ report()!.timeframe === 'multi' ? '4h · 1d · 1w' : report()!.timeframe }}
           </span>
         </div>

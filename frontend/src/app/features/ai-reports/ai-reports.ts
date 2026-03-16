@@ -24,8 +24,8 @@ import { AiApiService, type AiReport } from '../../core/services/ai.service';
           @for (report of reports(); track report.id) {
             <a [routerLink]="['/reports', report.id]"
                class="card block hover:border-[var(--color-primary)]/50 transition-colors cursor-pointer">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                   <span class="font-semibold text-[var(--color-primary)]">{{ report.symbol }}</span>
                   <span class="text-[var(--color-muted-foreground)] text-sm">{{ report.timeframe === 'multi' ? '4h · 1d · 1w' : report.timeframe }}</span>
                   @if (report.report_type === 'comprehensive') {
@@ -34,7 +34,7 @@ import { AiApiService, type AiReport } from '../../core/services/ai.service';
                     <span class="text-xs px-1.5 py-0.5 rounded bg-[var(--color-muted)] text-[var(--color-muted-foreground)]">{{ 'reports.standard' | transloco }}</span>
                   }
                 </div>
-                <span class="text-sm text-[var(--color-muted-foreground)]">{{ report.created_at | date:'short' }}</span>
+                <span class="text-xs sm:text-sm text-[var(--color-muted-foreground)] shrink-0">{{ report.created_at | date:'short' }}</span>
               </div>
               @if (report.content?.aiSummary || report.content?.aiAnalysis?.executiveSummary || report.content?.aiAnalysis?.summary) {
                 <p class="text-sm text-[var(--color-muted-foreground)] mt-2 line-clamp-2">

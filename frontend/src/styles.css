@@ -164,6 +164,15 @@ code,
   animation: fade-in 0.4s ease-out;
 }
 
+@keyframes slide-in {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.2s ease-out;
+}
+
 /* ── Markdown prose (AI reports) ── */
 .prose {
   color: var(--color-foreground);
@@ -207,6 +216,13 @@ code,
   border-collapse: collapse;
   margin-bottom: 1rem;
   font-size: 0.8125rem;
+  display: block;
+  overflow-x: auto;
+}
+@media (min-width: 768px) {
+  .prose table {
+    display: table;
+  }
 }
 .prose thead th {
   text-align: left;

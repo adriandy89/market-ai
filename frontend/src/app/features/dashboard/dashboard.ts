@@ -38,13 +38,12 @@ type SortKey = 'rank' | 'price' | 'change24h' | 'change7d' | 'marketCap';
                   <th class="text-right py-2 pr-4 cursor-pointer select-none hover:text-[var(--color-foreground)] transition-colors" (click)="onSort('change24h')">
                     {{ 'dashboard.change_24h' | transloco }} {{ sortIcon('change24h') }}
                   </th>
-                  <th class="text-right py-2 pr-4 cursor-pointer select-none hover:text-[var(--color-foreground)] transition-colors" (click)="onSort('change7d')">
+                  <th class="hidden md:table-cell text-right py-2 pr-4 cursor-pointer select-none hover:text-[var(--color-foreground)] transition-colors" (click)="onSort('change7d')">
                     {{ 'dashboard.change_7d' | transloco }} {{ sortIcon('change7d') }}
                   </th>
-                  <th class="text-right py-2 pr-4 cursor-pointer select-none hover:text-[var(--color-foreground)] transition-colors" (click)="onSort('marketCap')">
+                  <th class="hidden lg:table-cell text-right py-2 pr-4 cursor-pointer select-none hover:text-[var(--color-foreground)] transition-colors" (click)="onSort('marketCap')">
                     {{ 'dashboard.market_cap' | transloco }} {{ sortIcon('marketCap') }}
                   </th>
-                  <th class="text-right py-2"></th>
                 </tr>
               </thead>
               <tbody>
@@ -62,11 +61,11 @@ type SortKey = 'rank' | 'price' | 'change24h' | 'change7d' | 'marketCap';
                     <td class="py-3 pr-4 text-right font-mono" [class]="coin.change24h >= 0 ? 'price-up' : 'price-down'">
                       {{ coin.change24h >= 0 ? '+' : '' }}{{ fpct(coin.change24h) }}%
                     </td>
-                    <td class="py-3 pr-4 text-right font-mono" [class]="coin.change7d >= 0 ? 'price-up' : 'price-down'">
+                    <td class="hidden md:table-cell py-3 pr-4 text-right font-mono" [class]="coin.change7d >= 0 ? 'price-up' : 'price-down'">
                       {{ coin.change7d >= 0 ? '+' : '' }}{{ fpct(coin.change7d) }}%
                     </td>
-                    <td class="py-3 pr-4 text-right font-mono">\${{ formatMarketCap(coin.marketCap) }}</td>
-                    <td class="py-3 text-right">
+                    <td class="hidden lg:table-cell py-3 pr-4 text-right font-mono">\${{ formatMarketCap(coin.marketCap) }}</td>
+                    <td class="hidden sm:table-cell py-3 text-right">
                       <a [routerLink]="['/coin', coin.symbol]" class="text-[var(--color-primary)] hover:underline text-xs">
                         {{ 'dashboard.analyze' | transloco }}
                       </a>
