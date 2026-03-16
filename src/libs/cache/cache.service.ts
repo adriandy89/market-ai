@@ -127,6 +127,17 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
         }
     }
 
+    async setNx(key: string, value: string, ttlSeconds: number): Promise<boolean> {
+        if (!this.client?.isReady) return false;
+        try {
+            const result = await this.client.set(key, value, { NX: true, EX: ttlSeconds });
+            return result === 'OK';
+        } catch (error) {
+            console.error(`Error in SET NX from Redis, key: ${key}:`, error);
+            return false;
+        }
+    }
+
     async incrWithExpire(key: string, expireSeconds: number): Promise<number> {
         if (!this.client?.isReady) return -1;
         try {

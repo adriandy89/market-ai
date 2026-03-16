@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Anthropic from '@anthropic-ai/sdk';
-import { DbService } from 'src/libs';
+import { CacheService, DbService } from 'src/libs';
 import { CryptoService } from '../crypto/crypto.service';
 import { AnalysisService } from '../analysis/analysis.service';
 import { MarketContextService } from '../market-context/market-context.service';
@@ -14,6 +14,7 @@ export class AiService {
   constructor(
     private readonly configService: ConfigService,
     private readonly dbService: DbService,
+    private readonly cacheService: CacheService,
     private readonly cryptoService: CryptoService,
     private readonly analysisService: AnalysisService,
     private readonly marketContextService: MarketContextService,
@@ -30,6 +31,15 @@ export class AiService {
       this.logger.log(`Reusing fresh report for ${symbol}/${timeframe}/${language} (${fresh.id})`);
       return this.cloneReportForUser(fresh, userId);
     }
+
+    // Acquire lock — if another request is already generating, wait for it
+    const acquired = await this.acquireReportLock(symbol, timeframe, 'full', language);
+    if (!acquired) {
+      this.logger.log(`Waiting for in-progress report ${symbol}/${timeframe}/${language}`);
+      const waited = await this.waitForReport(userId, symbol, timeframe, 'full', language);
+      if (waited) return waited;
+    }
+
     const langInstruction = language === 'es' ? 'Write the entire report in Spanish.' : 'Write the entire report in English.';
 
     // Gather all market context in parallel (all from Binance klines)
@@ -115,6 +125,7 @@ ${langInstruction}`,
       },
     });
 
+    await this.releaseReportLock(symbol, timeframe, 'full', language);
     return report;
   }
 
@@ -125,6 +136,15 @@ ${langInstruction}`,
       this.logger.log(`Reusing fresh comprehensive report for ${symbol}/${language} (${fresh.id})`);
       return this.cloneReportForUser(fresh, userId);
     }
+
+    // Acquire lock — if another request is already generating, wait for it
+    const acquired = await this.acquireReportLock(symbol, 'multi', 'comprehensive', language);
+    if (!acquired) {
+      this.logger.log(`Waiting for in-progress comprehensive report ${symbol}/${language}`);
+      const waited = await this.waitForReport(userId, symbol, 'multi', 'comprehensive', language);
+      if (waited) return waited;
+    }
+
     const langInstruction = language === 'es' ? 'Write the entire report in Spanish.' : 'Write the entire report in English.';
 
     // Gather all data in parallel
@@ -326,6 +346,7 @@ ${langInstruction}`,
       },
     });
 
+    await this.releaseReportLock(symbol, 'multi', 'comprehensive', language);
     return report;
   }
 
@@ -368,6 +389,39 @@ ${langInstruction}`,
         content: source.content as any,
       },
     });
+  }
+
+  /**
+   * Try to acquire a Redis lock for report generation.
+   * Returns true if this request should generate the report.
+   * Returns false if another request is already generating it (caller should wait).
+   */
+  private async acquireReportLock(symbol: string, timeframe: string, reportType: string, language: string): Promise<boolean> {
+    const lockKey = `report-lock:${symbol}:${timeframe}:${reportType}:${language}`;
+    return this.cacheService.setNx(lockKey, '1', 60); // 60s TTL as safety net
+  }
+
+  private async releaseReportLock(symbol: string, timeframe: string, reportType: string, language: string): Promise<void> {
+    const lockKey = `report-lock:${symbol}:${timeframe}:${reportType}:${language}`;
+    await this.cacheService.del(lockKey);
+  }
+
+  /**
+   * Wait for an in-progress report to finish, then return it.
+   * Polls DB every 1s for up to 30s.
+   */
+  private async waitForReport(userId: string, symbol: string, timeframe: string, reportType: string, language: string): Promise<any> {
+    for (let i = 0; i < 30; i++) {
+      await new Promise((r) => setTimeout(r, 1000));
+      const fresh = await this.findFreshReport(symbol, timeframe, reportType, language);
+      if (fresh) {
+        this.logger.log(`Report ready after waiting ${i + 1}s for ${symbol}/${timeframe}/${language}`);
+        return this.cloneReportForUser(fresh, userId);
+      }
+    }
+    // Timeout — lock expired, generate anyway
+    this.logger.warn(`Wait timeout for ${symbol}/${timeframe}/${language}, generating new report`);
+    return null;
   }
 
   async getUserReports(userId: string, page: number = 1, limit: number = 10, symbol?: string) {
