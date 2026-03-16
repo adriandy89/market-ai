@@ -1,0 +1,15 @@
+name: web-game
+
+services:
+  marker-frontend:
+    container_name: marker-frontend
+    build:
+      dockerfile: Dockerfile
+      context: .
+    expose:
+      - '80'
+
+networks:
+  default:
+    external: true
+    name: game-network
