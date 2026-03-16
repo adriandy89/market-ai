@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { SearchBar } from '../../shared/components/search-bar/search-bar';
 import { AuthService } from '../../core/auth/auth.service';
 import { CryptoApiService, type CoinMarket } from '../../core/services/crypto.service';
 import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format';
@@ -8,12 +9,13 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
 @Component({
   selector: 'app-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, TranslocoPipe],
+  imports: [RouterLink, TranslocoPipe, SearchBar],
   template: `
     <div class="animate-fade-in">
-      <h1 class="text-2xl font-bold mb-6">
-        {{ 'dashboard.welcome' | transloco }} <span class="text-[var(--color-primary)]">{{ auth.user()?.name }}</span>
-      </h1>
+      <!-- Search -->
+      <div class="mb-6 max-w-md">
+        <app-search-bar />
+      </div>
 
       <div class="card mb-6">
         <h2 class="text-lg font-semibold mb-4">{{ 'dashboard.top_crypto' | transloco }}</h2>
@@ -93,7 +95,7 @@ export class Dashboard implements OnInit, OnDestroy {
 
   private async loadCoins() {
     try {
-      const data = await this.cryptoApi.getTopCoins(15);
+      const data = await this.cryptoApi.getTopCoins(200);
       this.coins.set(data);
     } catch (err) {
       console.error('Failed to load coins:', err);

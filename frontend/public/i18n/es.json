@@ -1,4 +1,8 @@
 {
+  "search": {
+    "placeholder": "Buscar criptomoneda...",
+    "no_results": "Sin resultados"
+  },
   "common": {
     "loading": "Cargando...",
     "loading_market": "Cargando datos del mercado...",

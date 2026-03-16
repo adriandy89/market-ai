@@ -330,8 +330,14 @@ ${langInstruction}`,
   }
 
   private extractSummary(markdown: string): string {
-    const match = markdown.match(/## Executive Summary\n+([\s\S]*?)(?=\n##|$)/);
-    return match?.[1]?.trim().slice(0, 200) || '';
+    // Match first ## section content (any language: Executive Summary, Resumen Ejecutivo, etc.)
+    const match = markdown.match(/^##\s+.+\n+([\s\S]*?)(?=\n##|$)/m);
+    if (match?.[1]?.trim()) {
+      return match[1].trim().slice(0, 200);
+    }
+    // Fallback: first non-empty paragraph
+    const lines = markdown.split('\n').filter((l) => l.trim() && !l.startsWith('#'));
+    return lines[0]?.trim().slice(0, 200) || '';
   }
 
   private async findFreshReport(symbol: string, timeframe: string, reportType: string, language: string = 'es') {

@@ -51,10 +51,22 @@ export interface WatchlistItem {
   added_at: string;
 }
 
+export interface SearchResult {
+  id: string;
+  symbol: string;
+  name: string;
+  thumb: string;
+  rank: number | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CryptoApiService {
   private readonly http = inject(HttpClient);
   private readonly api = environment.apiUrl;
+
+  searchCoins(query: string): Promise<SearchResult[]> {
+    return firstValueFrom(this.http.get<SearchResult[]>(`${this.api}/crypto/search?q=${encodeURIComponent(query)}`));
+  }
 
   getTopCoins(limit = 20): Promise<CoinMarket[]> {
     return firstValueFrom(this.http.get<CoinMarket[]>(`${this.api}/crypto/top?limit=${limit}`));

@@ -34,6 +34,30 @@ export class CryptoService {
 
   // ═══════════════ MARKET DATA ═══════════════
 
+  // ═══════════════ SEARCH ═══════════════
+
+  async searchCoins(query: string) {
+    const cacheKey = `crypto:search:${query.toLowerCase()}`;
+    const cached = await this.cacheService.get<any[]>(cacheKey);
+    if (cached) return cached;
+
+    const data = await this.fetchCoinGecko(`/search?query=${encodeURIComponent(query)}`);
+    if (!data?.coins) return [];
+
+    const coins = data.coins.slice(0, 10).map((c: any) => ({
+      id: c.id,
+      symbol: c.symbol?.toUpperCase(),
+      name: c.name,
+      thumb: c.thumb,
+      rank: c.market_cap_rank,
+    }));
+
+    await this.cacheService.set(cacheKey, coins, 300);
+    return coins;
+  }
+
+  // ═══════════════ MARKET DATA ═══════════════
+
   async getTopCoins(limit: number = 20) {
     const cacheKey = `crypto:top:${limit}`;
     const cached = await this.cacheService.get<any[]>(cacheKey);

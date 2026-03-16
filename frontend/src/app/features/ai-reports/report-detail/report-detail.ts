@@ -19,7 +19,7 @@ import { formatPrice } from '../../../shared/utils/format';
       } @else if (report()) {
         <div class="flex items-center justify-between mb-6">
           <h1 class="text-2xl font-bold">
-            <span class="text-[var(--color-primary)]">{{ report()!.symbol }}</span> Report
+            <a [routerLink]="['/coin', report()!.symbol]" class="text-[var(--color-primary)] underline hover:brightness-125 transition-all">{{ report()!.symbol }}</a> Report
             @if (isComprehensive()) {
               <span class="ml-2 text-xs px-2 py-0.5 rounded bg-[var(--color-accent)]/20 text-[var(--color-accent)]">Comprehensive</span>
             }

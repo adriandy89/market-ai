@@ -24,6 +24,12 @@ export class CryptoController {
     return this.cryptoService.getTopCoins(limit ? parseInt(limit) : 20);
   }
 
+  @Get('search')
+  async searchCoins(@Query('q') query?: string) {
+    if (!query || query.length < 2) return [];
+    return this.cryptoService.searchCoins(query);
+  }
+
   @Get('trending')
   async getTrending() {
     return this.cryptoService.getTrending();

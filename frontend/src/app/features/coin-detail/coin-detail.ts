@@ -83,9 +83,13 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
             (loadMore)="onLoadMore($event)"
           />
         </div>
+      } @else if (chartUnavailable()) {
+        <div class="card mb-6 flex items-center justify-center py-12">
+          <p class="text-[var(--color-muted-foreground)] text-sm">{{ symbol() }} chart not available on Binance</p>
+        </div>
       } @else {
         <div class="card mb-6 flex items-center justify-center" style="height: 500px;">
-          <p class="text-[var(--color-muted-foreground)]">Loading chart...</p>
+          <p class="text-[var(--color-muted-foreground)]">{{ 'common.loading_chart' | transloco }}</p>
         </div>
       }
 
@@ -264,6 +268,7 @@ export class CoinDetail implements OnInit {
   levels = signal<any>(null);
   patterns = signal<any[]>([]);
   klines = signal<Kline[]>([]);
+  chartUnavailable = signal(false);
   timeframe = signal('4h');
   generating = signal(false);
   generatingComprehensive = signal(false);
@@ -289,7 +294,11 @@ export class CoinDetail implements OnInit {
     ]);
 
     if (priceData.status === 'fulfilled') this.price.set(priceData.value);
-    if (klinesData.status === 'fulfilled') this.klines.set(klinesData.value?.data || []);
+    if (klinesData.status === 'fulfilled' && klinesData.value?.data?.length) {
+      this.klines.set(klinesData.value.data);
+    } else {
+      this.chartUnavailable.set(true);
+    }
     if (sentimentData.status === 'fulfilled') this.sentiment.set(sentimentData.value);
     if (newsData.status === 'fulfilled') this.news.set(newsData.value?.items || []);
 
