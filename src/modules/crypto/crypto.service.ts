@@ -143,6 +143,7 @@ export class CryptoService {
   // ═══════════════ BINANCE KLINES ═══════════════
 
   async getKlines(symbol: string, interval: string = '4h', limit: number = 300, endTime?: number) {
+    interval = interval.toLowerCase();
     if (!VALID_INTERVALS.includes(interval as any)) {
       return { symbol, interval, data: [], error: 'Invalid interval' };
     }

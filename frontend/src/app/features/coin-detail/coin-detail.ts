@@ -221,7 +221,7 @@ export class CoinDetail implements OnInit {
   async onGenerateReport() {
     this.generating.set(true);
     try {
-      const report = await this.aiApi.generateReport(this.symbol());
+      const report = await this.aiApi.generateReport(this.symbol(), this.timeframe());
       this.router.navigate(['/reports', report.id]);
     } catch (err) {
       console.error('Failed to generate report:', err);

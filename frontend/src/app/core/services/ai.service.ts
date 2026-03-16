@@ -18,7 +18,7 @@ export class AiApiService {
   private readonly http = inject(HttpClient);
   private readonly api = environment.apiUrl;
 
-  generateReport(symbol: string, timeframe = '1D'): Promise<AiReport> {
+  generateReport(symbol: string, timeframe = '4h'): Promise<AiReport> {
     return firstValueFrom(
       this.http.post<AiReport>(`${this.api}/ai/report/${symbol}?timeframe=${timeframe}`, {}),
     );

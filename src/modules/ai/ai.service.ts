@@ -21,13 +21,13 @@ export class AiService {
     });
   }
 
-  async generateReport(userId: string, symbol: string, timeframe: string = '1D') {
-    // Gather all market context in parallel
+  async generateReport(userId: string, symbol: string, timeframe: string = '4h') {
+    // Gather all market context in parallel (all from Binance klines)
     const [price, indicators, patterns, levels] = await Promise.all([
       this.cryptoService.getCoinPrice(symbol),
       this.analysisService.getIndicators(symbol, timeframe),
-      this.analysisService.getPatterns(symbol),
-      this.analysisService.getSupportResistance(symbol),
+      this.analysisService.getPatterns(symbol, timeframe),
+      this.analysisService.getSupportResistance(symbol, timeframe),
     ]);
 
     const marketContext = JSON.stringify({ price, indicators, patterns, levels }, null, 2);

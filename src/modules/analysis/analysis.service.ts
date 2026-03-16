@@ -3,11 +3,6 @@ import { RSI, MACD, BollingerBands, EMA, SMA, Stochastic, ADX } from 'technicali
 import { CacheService } from 'src/libs';
 import { CryptoService } from '../crypto/crypto.service';
 
-const DAYS_MAP: Record<string, number> = {
-  '15m': 1, '30m': 1, '1h': 1, '4h': 1,
-  '1d': 30, '1D': 30, '1w': 90, '1W': 90, '1M': 365,
-};
-
 @Injectable()
 export class AnalysisService {
   private readonly logger = new Logger(AnalysisService.name);
@@ -17,21 +12,19 @@ export class AnalysisService {
     private readonly cryptoService: CryptoService,
   ) { }
 
-  async getIndicators(symbol: string, timeframe: string = '1d') {
+  async getIndicators(symbol: string, timeframe: string = '4h') {
     const cacheKey = `analysis:indicators:${symbol}:${timeframe}`;
     const cached = await this.cacheService.get<any>(cacheKey);
     if (cached) return cached;
 
-    const days = DAYS_MAP[timeframe] || 30;
-
-    const history = await this.cryptoService.getCoinHistory(symbol, days);
-    if (!history.data || history.data.length < 14) {
+    const klines = await this.cryptoService.getKlines(symbol, timeframe, 300);
+    if (!klines.data || klines.data.length < 14) {
       return { symbol, timeframe, indicators: null, error: 'Insufficient data' };
     }
 
-    const closes = history.data.map((c: any) => c.close);
-    const highs = history.data.map((c: any) => c.high);
-    const lows = history.data.map((c: any) => c.low);
+    const closes = klines.data.map((c: any) => c.close);
+    const highs = klines.data.map((c: any) => c.high);
+    const lows = klines.data.map((c: any) => c.low);
     const currentPrice = closes[closes.length - 1];
 
     // RSI (14)
@@ -74,32 +67,32 @@ export class AnalysisService {
       currentPrice,
       indicators: {
         rsi: {
-          value: this.round(rsiCurrent),
+          value: rsiCurrent,
           signal: rsiCurrent != null ? (rsiCurrent > 70 ? 'overbought' : rsiCurrent < 30 ? 'oversold' : 'neutral') : null,
         },
         macd: {
-          macd: this.round(macdCurrent?.MACD),
-          signal: this.round(macdCurrent?.signal),
-          histogram: this.round(macdCurrent?.histogram),
+          macd: macdCurrent?.MACD ?? null,
+          signal: macdCurrent?.signal ?? null,
+          histogram: macdCurrent?.histogram ?? null,
           trend: macdCurrent?.histogram != null ? (macdCurrent.histogram > 0 ? 'bullish' : 'bearish') : null,
         },
         bollingerBands: bbCurrent ? {
-          upper: this.round(bbCurrent.upper),
-          middle: this.round(bbCurrent.middle),
-          lower: this.round(bbCurrent.lower),
+          upper: bbCurrent.upper,
+          middle: bbCurrent.middle,
+          lower: bbCurrent.lower,
           position: currentPrice > bbCurrent.upper ? 'above_upper' : currentPrice < bbCurrent.lower ? 'below_lower' : 'within',
         } : null,
         ema: { ema9, ema21, ema50, ema200 },
         sma: { sma20, sma50, sma200 },
         stochastic: stochCurrent ? {
-          k: this.round(stochCurrent.k),
-          d: this.round(stochCurrent.d),
+          k: stochCurrent.k,
+          d: stochCurrent.d,
           signal: stochCurrent.k > 80 ? 'overbought' : stochCurrent.k < 20 ? 'oversold' : 'neutral',
         } : null,
         adx: adxCurrent ? {
-          adx: this.round(adxCurrent.adx),
-          pdi: this.round(adxCurrent.pdi),
-          mdi: this.round(adxCurrent.mdi),
+          adx: adxCurrent.adx,
+          pdi: adxCurrent.pdi,
+          mdi: adxCurrent.mdi,
           trendStrength: adxCurrent.adx > 25 ? 'strong' : 'weak',
         } : null,
       },
@@ -109,14 +102,13 @@ export class AnalysisService {
     return result;
   }
 
-  async getPatterns(symbol: string, timeframe: string = '1d') {
-    const days = DAYS_MAP[timeframe] || 7;
-    const history = await this.cryptoService.getCoinHistory(symbol, Math.max(days, 7));
-    if (!history.data || history.data.length < 5) {
+  async getPatterns(symbol: string, timeframe: string = '4h') {
+    const klines = await this.cryptoService.getKlines(symbol, timeframe, 20);
+    if (!klines.data || klines.data.length < 5) {
       return { symbol, patterns: [] };
     }
 
-    const candles = history.data.slice(-10);
+    const candles = klines.data.slice(-10);
     const patterns: { name: string; type: 'bullish' | 'bearish' | 'neutral'; index: number }[] = [];
 
     for (let i = 1; i < candles.length; i++) {
@@ -157,14 +149,14 @@ export class AnalysisService {
     return { symbol, patterns };
   }
 
-  async getSupportResistance(symbol: string, timeframe: string = '1d') {
-    const days = DAYS_MAP[timeframe] || 30;
-    const history = await this.cryptoService.getCoinHistory(symbol, Math.max(days, 7));
-    if (!history.data || history.data.length < 5) {
+  async getSupportResistance(symbol: string, timeframe: string = '4h') {
+    const klines = await this.cryptoService.getKlines(symbol, timeframe, 5);
+    if (!klines.data || klines.data.length < 2) {
       return { symbol, support: [], resistance: [] };
     }
 
-    const last = history.data[history.data.length - 1];
+    // Use the last COMPLETED candle (second to last), not the current open one
+    const last = klines.data[klines.data.length - 2];
     const pivot = (last.high + last.low + last.close) / 3;
     const r1 = 2 * pivot - last.low;
     const s1 = 2 * pivot - last.high;
@@ -175,16 +167,16 @@ export class AnalysisService {
 
     return {
       symbol,
-      pivot: this.round(pivot),
+      pivot,
       resistance: [
-        { level: 'R1', price: this.round(r1) },
-        { level: 'R2', price: this.round(r2) },
-        { level: 'R3', price: this.round(r3) },
+        { level: 'R1', price: r1 },
+        { level: 'R2', price: r2 },
+        { level: 'R3', price: r3 },
       ],
       support: [
-        { level: 'S1', price: this.round(s1) },
-        { level: 'S2', price: this.round(s2) },
-        { level: 'S3', price: this.round(s3) },
+        { level: 'S1', price: s1 },
+        { level: 'S2', price: s2 },
+        { level: 'S3', price: s3 },
       ],
     };
   }
@@ -192,10 +184,5 @@ export class AnalysisService {
   private lastVal(arr: number[]): number | null {
     if (!arr || arr.length === 0) return null;
     return arr[arr.length - 1];
-  }
-
-  private round(val: number | null | undefined): number | null {
-    if (val == null) return null;
-    return val;
   }
 }

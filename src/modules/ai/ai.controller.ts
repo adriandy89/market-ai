@@ -20,7 +20,7 @@ export class AiController {
     return this.aiService.generateReport(
       user.id,
       symbol.toUpperCase(),
-      timeframe || '1D',
+      timeframe || '4h',
     );
   }
 
