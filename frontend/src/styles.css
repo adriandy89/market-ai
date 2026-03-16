@@ -1,0 +1,164 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  /* ── Core palette (Crypto Finance Dark) ── */
+  --color-background: hsl(220 30% 5%);
+  --color-foreground: hsl(210 20% 88%);
+  --color-card: hsl(220 25% 9%);
+  --color-card-foreground: hsl(210 20% 88%);
+  --color-primary: hsl(160 80% 45%);
+  --color-primary-foreground: hsl(220 30% 5%);
+  --color-secondary: hsl(220 22% 13%);
+  --color-secondary-foreground: hsl(210 20% 88%);
+  --color-muted: hsl(220 18% 15%);
+  --color-muted-foreground: hsl(215 15% 55%);
+  --color-accent: hsl(45 90% 55%);
+  --color-accent-foreground: hsl(220 30% 5%);
+  --color-destructive: hsl(0 70% 50%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-border: hsl(220 25% 16%);
+  --color-input: hsl(220 25% 16%);
+  --color-ring: hsl(160 80% 45%);
+
+  /* ── Sidebar ── */
+  --color-sidebar: hsl(220 30% 7%);
+  --color-sidebar-foreground: hsl(210 20% 75%);
+  --color-sidebar-border: hsl(220 25% 14%);
+
+  /* ── Market colors ── */
+  --color-bull: hsl(145 65% 50%);
+  --color-bear: hsl(0 70% 55%);
+  --color-neutral: hsl(45 90% 55%);
+
+  /* ── Fonts ── */
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* ── Border radius ── */
+  --radius: 0.5rem;
+}
+
+/* ── Base ── */
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  margin: 0;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code,
+.mono {
+  font-family: var(--font-mono);
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Utility classes ── */
+@layer components {
+  .card {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+  }
+
+  .btn-primary {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: var(--radius);
+    background: var(--color-primary);
+    color: var(--color-primary-foreground);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    filter: brightness(1.1);
+    box-shadow: 0 0 15px hsl(160 80% 45% / 0.3);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: var(--radius);
+    background: var(--color-secondary);
+    color: var(--color-foreground);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--color-muted);
+    border-color: var(--color-primary);
+  }
+
+  .input {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    border-radius: var(--radius);
+    background: var(--color-secondary);
+    color: var(--color-foreground);
+    border: 1px solid var(--color-border);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px hsl(160 80% 45% / 0.15);
+  }
+
+  .price-up {
+    color: var(--color-bull);
+  }
+
+  .price-down {
+    color: var(--color-bear);
+  }
+}
+
+/* ── Animations ── */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out;
+}

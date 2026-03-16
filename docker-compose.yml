@@ -1,0 +1,29 @@
+name: market-ai
+
+services:
+  db-migrate-market:
+    container_name: db-migrate-market
+    build:
+      context: .
+      target: prisma-migrate
+    env_file:
+      - ./.env.local
+
+  backend-market:
+    container_name: backend-market
+    env_file:
+      - ./.env.local
+    build:
+      context: .
+      target: production
+    restart: always
+    expose:
+      - 3001
+    depends_on:
+      db-migrate-market:
+        condition: service_completed_successfully
+
+networks:
+  default:
+    external: true
+    name: market-network

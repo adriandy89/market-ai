@@ -1,0 +1,119 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AUTH & USERS
+// ═══════════════════════════════════════════════════════════════
+
+model User {
+  id                String    @id(map: "pk_user_id") @default(uuid())
+  email             String    @unique(map: "uq_user_email") @db.VarChar
+  password          String    @db.VarChar(128)
+  name              String    @db.VarChar(128)
+  disabled          Boolean   @default(false)
+  is_email_verified Boolean   @default(false)
+  role              Role      @default(USER)
+  created_at        DateTime  @default(dbgenerated("('now'::text)::timestamp with time zone")) @db.Timestamptz(6)
+  updated_at        DateTime? @updatedAt @db.Timestamptz(6)
+
+  session_logs     SessionLogs[]
+  watchlists       Watchlist[]
+  analysis_reports AnalysisReport[]
+
+  @@index([email], map: "idx_user_email")
+  @@index([role])
+  @@index([disabled])
+  @@map("users")
+}
+
+model VerificationToken {
+  id      String   @id(map: "pk_verification_token_id") @default(uuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
+  @@index([email], map: "idx_email_verificaton")
+  @@index([token], map: "idx_token_verificaton")
+  @@map("verification_tokens")
+}
+
+model PasswordResetToken {
+  id      String   @id(map: "pk_passw_reset_token_id") @default(uuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
+  @@index([email], map: "idx_email_passw_reset")
+  @@index([token], map: "idx_token_passw_reset")
+  @@map("password_reset_tokens")
+}
+
+model SessionLogs {
+  id         String    @id(map: "pk_session_logs_id") @default(uuid())
+  session_id String
+  user_id    String
+  email      String?   @db.VarChar(128)
+  ip         String?   @db.VarChar(128)
+  attributes Json?     @db.JsonB
+  created_at DateTime  @default(dbgenerated("('now'::text)::timestamp with time zone")) @db.Timestamptz(6)
+  logout_at  DateTime? @db.Timestamptz(6)
+  user       User      @relation(fields: [user_id], references: [id], onUpdate: NoAction, onDelete: Cascade, map: "fk_session_user")
+
+  @@unique([session_id, user_id], map: "uq_session_logs_session_id")
+  @@index([session_id], map: "idx_session_session_id")
+  @@index([user_id], map: "idx_session_user_id")
+  @@index([email], map: "idx_session_email")
+  @@index([logout_at], map: "idx_session_logout_at")
+  @@map("session_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CRYPTO / MARKET
+// ═══════════════════════════════════════════════════════════════
+
+model Watchlist {
+  id       String   @id(map: "pk_watchlist_id") @default(uuid())
+  user_id  String
+  symbol   String   @db.VarChar(20)
+  name     String   @db.VarChar(128)
+  added_at DateTime @default(dbgenerated("('now'::text)::timestamp with time zone")) @db.Timestamptz(6)
+  user     User     @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_watchlist_user")
+
+  @@unique([user_id, symbol], map: "uq_watchlist_user_symbol")
+  @@index([user_id], map: "idx_watchlist_user_id")
+  @@map("watchlists")
+}
+
+model AnalysisReport {
+  id          String   @id(map: "pk_analysis_report_id") @default(uuid())
+  user_id     String
+  symbol      String   @db.VarChar(20)
+  timeframe   String   @db.VarChar(10)
+  report_type String   @db.VarChar(50)
+  content     Json     @db.JsonB
+  created_at  DateTime @default(dbgenerated("('now'::text)::timestamp with time zone")) @db.Timestamptz(6)
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_report_user")
+
+  @@index([user_id], map: "idx_report_user_id")
+  @@index([symbol], map: "idx_report_symbol")
+  @@index([created_at], map: "idx_report_created_at")
+  @@map("analysis_reports")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ENUMS
+// ═══════════════════════════════════════════════════════════════
+
+enum Role {
+  USER
+  ADMIN
+}
