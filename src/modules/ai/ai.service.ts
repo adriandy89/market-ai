@@ -81,6 +81,16 @@ Use this exact structure:
 **Level:** (Low/Medium/High)
 (Explanation of risk factors)
 
+## Trade Setup
+**Direction:** (Long/Short/Neutral)
+**Entry Zone:** (specific price range based on support, resistance, and indicators)
+**Stop Loss:** (price level + % from entry)
+**Take Profit 1:** (price level + % from entry)
+**Take Profit 2:** (price level + % from entry)
+**Risk/Reward Ratio:** (X:1)
+**Confidence:** (Low/Medium/High)
+**Invalidation:** (conditions that would cancel this setup)
+
 ## Outlook
 (1-7 day forecast with key price levels to watch)
 
@@ -300,6 +310,19 @@ Use this exact structure:
 **Trigger:** (what needs to happen)
 **Targets:** (price levels)
 **Probability:** (assessment)
+
+## Trade Setup
+**Direction:** (Long/Short/Neutral)
+**Entry Zone:** (specific price range based on technical confluence across timeframes)
+**Stop Loss:** (price level + % from entry)
+**Take Profit 1:** (conservative target + % from entry)
+**Take Profit 2:** (extended target + % from entry)
+**Take Profit 3:** (aggressive target + % from entry)
+**Risk/Reward Ratio:** (X:1)
+**Position Size Suggestion:** (conservative % of portfolio based on risk level)
+**Confidence:** (Low/Medium/High — based on confluence strength and sentiment alignment)
+**Invalidation:** (conditions that would cancel this setup)
+**Timeframe:** (recommended holding period)
 
 ## Outlook
 **Short Term:** (1-3 days)
