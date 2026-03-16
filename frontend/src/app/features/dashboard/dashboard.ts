@@ -1,10 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { SearchBar } from '../../shared/components/search-bar/search-bar';
 import { AuthService } from '../../core/auth/auth.service';
 import { CryptoApiService, type CoinMarket } from '../../core/services/crypto.service';
 import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format';
+
+type SortKey = 'rank' | 'price' | 'change24h' | 'change7d' | 'marketCap';
 
 @Component({
   selector: 'app-dashboard',
@@ -26,25 +28,35 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
             <table class="w-full text-sm">
               <thead>
                 <tr class="text-[var(--color-muted-foreground)] border-b border-[var(--color-border)]">
-                  <th class="text-left py-2 pr-4">#</th>
+                  <th class="text-left py-2 pr-4 cursor-pointer select-none hover:text-[var(--color-foreground)] transition-colors" (click)="onSort('rank')">
+                    # {{ sortIcon('rank') }}
+                  </th>
                   <th class="text-left py-2 pr-4">{{ 'dashboard.name' | transloco }}</th>
-                  <th class="text-right py-2 pr-4">{{ 'dashboard.price' | transloco }}</th>
-                  <th class="text-right py-2 pr-4">{{ 'dashboard.change_24h' | transloco }}</th>
-                  <th class="text-right py-2 pr-4">{{ 'dashboard.change_7d' | transloco }}</th>
-                  <th class="text-right py-2 pr-4">{{ 'dashboard.market_cap' | transloco }}</th>
+                  <th class="text-right py-2 pr-4 cursor-pointer select-none hover:text-[var(--color-foreground)] transition-colors" (click)="onSort('price')">
+                    {{ 'dashboard.price' | transloco }} {{ sortIcon('price') }}
+                  </th>
+                  <th class="text-right py-2 pr-4 cursor-pointer select-none hover:text-[var(--color-foreground)] transition-colors" (click)="onSort('change24h')">
+                    {{ 'dashboard.change_24h' | transloco }} {{ sortIcon('change24h') }}
+                  </th>
+                  <th class="text-right py-2 pr-4 cursor-pointer select-none hover:text-[var(--color-foreground)] transition-colors" (click)="onSort('change7d')">
+                    {{ 'dashboard.change_7d' | transloco }} {{ sortIcon('change7d') }}
+                  </th>
+                  <th class="text-right py-2 pr-4 cursor-pointer select-none hover:text-[var(--color-foreground)] transition-colors" (click)="onSort('marketCap')">
+                    {{ 'dashboard.market_cap' | transloco }} {{ sortIcon('marketCap') }}
+                  </th>
                   <th class="text-right py-2"></th>
                 </tr>
               </thead>
               <tbody>
-                @for (coin of coins(); track coin.symbol) {
+                @for (coin of sortedCoins(); track coin.symbol) {
                   <tr class="border-b border-[var(--color-border)]/50 hover:bg-[var(--color-secondary)]/50">
                     <td class="py-3 pr-4 text-[var(--color-muted-foreground)]">{{ coin.rank }}</td>
                     <td class="py-3 pr-4">
-                      <div class="flex items-center gap-2">
+                      <a [routerLink]="['/coin', coin.symbol]" class="flex items-center gap-2 hover:text-[var(--color-primary)] transition-colors">
                         <img [src]="coin.image" [alt]="coin.name" class="w-6 h-6 rounded-full" />
                         <span class="font-medium">{{ coin.name }}</span>
                         <span class="text-[var(--color-muted-foreground)] text-xs">{{ coin.symbol }}</span>
-                      </div>
+                      </a>
                     </td>
                     <td class="py-3 pr-4 text-right font-mono">\${{ fp(coin.price) }}</td>
                     <td class="py-3 pr-4 text-right font-mono" [class]="coin.change24h >= 0 ? 'price-up' : 'price-down'">
@@ -75,6 +87,16 @@ export class Dashboard implements OnInit, OnDestroy {
 
   coins = signal<CoinMarket[]>([]);
   loading = signal(true);
+  sortKey = signal<SortKey | null>(null);
+  sortDir = signal<'asc' | 'desc'>('desc');
+
+  sortedCoins = computed(() => {
+    const key = this.sortKey();
+    if (!key) return this.coins();
+    const list = [...this.coins()];
+    const dir = this.sortDir() === 'asc' ? 1 : -1;
+    return list.sort((a, b) => ((a[key] ?? 0) - (b[key] ?? 0)) * dir);
+  });
 
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
   private visibilityHandler: (() => void) | null = null;
@@ -102,6 +124,25 @@ export class Dashboard implements OnInit, OnDestroy {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  onSort(key: SortKey) {
+    if (this.sortKey() === key) {
+      // cycle: desc → asc → off
+      if (this.sortDir() === 'desc') {
+        this.sortDir.set('asc');
+      } else {
+        this.sortKey.set(null);
+      }
+    } else {
+      this.sortKey.set(key);
+      this.sortDir.set('desc');
+    }
+  }
+
+  sortIcon(key: SortKey): string {
+    if (this.sortKey() !== key) return '';
+    return this.sortDir() === 'asc' ? '\u25B2' : '\u25BC';
   }
 
   fp = formatPrice;
