@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { AiApiService, type AiReport } from '../../../core/services/ai.service';
+import { formatPrice } from '../../../shared/utils/format';
 
 @Component({
   selector: 'app-report-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, DatePipe, DecimalPipe],
+  imports: [RouterLink, DatePipe],
   template: `
     <div class="animate-fade-in">
       <a routerLink="/reports" class="text-[var(--color-primary)] text-sm hover:underline mb-4 inline-block">&larr; Back to Reports</a>
@@ -27,7 +28,7 @@ import { AiApiService, type AiReport } from '../../../core/services/ai.service';
         @if (content()?.price) {
           <div class="card mb-6">
             <h3 class="text-sm font-medium text-[var(--color-muted-foreground)] mb-1">Price at Report Time</h3>
-            <span class="text-2xl font-bold font-mono">\${{ content()!.price.price | number:'1.2-2' }}</span>
+            <span class="text-2xl font-bold font-mono">\${{ fp(content()!.price.price) }}</span>
           </div>
         }
 
@@ -83,6 +84,7 @@ export class ReportDetail implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly aiApi = inject(AiApiService);
 
+  fp = formatPrice;
   report = signal<AiReport | null>(null);
   content = signal<any>(null);
   loading = signal(true);

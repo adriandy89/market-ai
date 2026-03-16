@@ -1,13 +1,15 @@
-import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, viewChild, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { DecimalPipe } from '@angular/common';
-import { CryptoApiService } from '../../core/services/crypto.service';
+import { CryptoApiService, type Kline } from '../../core/services/crypto.service';
+import { AnalysisApiService } from '../../core/services/analysis.service';
 import { AiApiService } from '../../core/services/ai.service';
+import { TradingChart } from '../../shared/trading-chart/trading-chart';
+import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format';
 
 @Component({
   selector: 'app-coin-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe],
+  imports: [TradingChart],
   template: `
     <div class="animate-fade-in">
       <div class="flex items-center justify-between mb-6">
@@ -21,14 +23,31 @@ import { AiApiService } from '../../core/services/ai.service';
       @if (price()) {
         <div class="card mb-6">
           <div class="flex items-baseline gap-4">
-            <span class="text-3xl font-bold font-mono">\${{ price()!.price | number:'1.2-2' }}</span>
+            <span class="text-3xl font-bold font-mono">\${{ fp(price()!.price) }}</span>
             <span class="text-lg font-mono" [class]="price()!.change24h >= 0 ? 'price-up' : 'price-down'">
-              {{ price()!.change24h >= 0 ? '+' : '' }}{{ price()!.change24h | number:'1.2-2' }}%
+              {{ price()!.change24h >= 0 ? '+' : '' }}{{ fpct(price()!.change24h) }}%
             </span>
           </div>
           <p class="text-sm text-[var(--color-muted-foreground)] mt-1">
-            Vol: \${{ formatNum(price()!.volume24h) }} · MCap: \${{ formatNum(price()!.marketCap) }}
+            Vol: \${{ fc(price()!.volume24h) }} · MCap: \${{ fc(price()!.marketCap) }}
           </p>
+        </div>
+      }
+
+      <!-- Trading Chart -->
+      @if (klines().length > 0) {
+        <div class="card mb-6 !p-3">
+          <app-trading-chart #tradingChart
+            [ohlcData]="klines()"
+            [symbol]="symbol()"
+            [activeTimeframe]="timeframe()"
+            (timeframeChange)="onTimeframeChange($event)"
+            (loadMore)="onLoadMore($event)"
+          />
+        </div>
+      } @else {
+        <div class="card mb-6 flex items-center justify-center" style="height: 500px;">
+          <p class="text-[var(--color-muted-foreground)]">Loading chart...</p>
         </div>
       }
 
@@ -90,17 +109,17 @@ import { AiApiService } from '../../core/services/ai.service';
               @for (r of levels()!.resistance; track r.level) {
                 <div class="flex justify-between">
                   <span class="text-[var(--color-bear)]">{{ r.level }}</span>
-                  <span class="font-mono">\${{ r.price | number:'1.2-2' }}</span>
+                  <span class="font-mono">\${{ fp(r.price) }}</span>
                 </div>
               }
               <div class="flex justify-between font-semibold border-y border-[var(--color-border)] py-2 my-2">
                 <span>Pivot</span>
-                <span class="font-mono">\${{ levels()!.pivot | number:'1.2-2' }}</span>
+                <span class="font-mono">\${{ fp(levels()!.pivot) }}</span>
               </div>
               @for (s of levels()!.support; track s.level) {
                 <div class="flex justify-between">
                   <span class="text-[var(--color-bull)]">{{ s.level }}</span>
-                  <span class="font-mono">\${{ s.price | number:'1.2-2' }}</span>
+                  <span class="font-mono">\${{ fp(s.price) }}</span>
                 </div>
               }
             </div>
@@ -131,31 +150,72 @@ export class CoinDetail implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly cryptoApi = inject(CryptoApiService);
+  private readonly analysisApi = inject(AnalysisApiService);
   private readonly aiApi = inject(AiApiService);
+
+  private tradingChart = viewChild<TradingChart>('tradingChart');
 
   symbol = signal('');
   price = signal<any>(null);
   indicators = signal<any>(null);
   levels = signal<any>(null);
   patterns = signal<any[]>([]);
+  klines = signal<Kline[]>([]);
+  timeframe = signal('4h');
   generating = signal(false);
 
   async ngOnInit() {
     const sym = this.route.snapshot.paramMap.get('symbol')?.toUpperCase() || '';
     this.symbol.set(sym);
 
+    const tf = this.timeframe();
     // Load all data in parallel
-    const [priceData, indData, levelsData, patternsData] = await Promise.allSettled([
-      fetch(`/api/v1/crypto/price/${sym}`).then(r => r.json()),
-      fetch(`/api/v1/analysis/${sym}/indicators`).then(r => r.json()),
-      fetch(`/api/v1/analysis/${sym}/levels`).then(r => r.json()),
-      fetch(`/api/v1/analysis/${sym}/patterns`).then(r => r.json()),
+    const [priceData, klinesData] = await Promise.allSettled([
+      this.cryptoApi.getCoinPrice(sym),
+      this.cryptoApi.getKlines(sym, tf, 300),
     ]);
 
     if (priceData.status === 'fulfilled') this.price.set(priceData.value);
+    if (klinesData.status === 'fulfilled') this.klines.set(klinesData.value?.data || []);
+
+    // Load analysis data with timeframe
+    await this.loadAnalysis(sym, tf);
+  }
+
+  async onTimeframeChange(tf: string) {
+    this.timeframe.set(tf);
+    const sym = this.symbol();
+    try {
+      // Reload chart + analysis in parallel
+      const [klinesData] = await Promise.allSettled([
+        this.cryptoApi.getKlines(sym, tf, 300),
+      ]);
+      if (klinesData.status === 'fulfilled') this.klines.set(klinesData.value?.data || []);
+      await this.loadAnalysis(sym, tf);
+    } catch (err) {
+      console.error('Failed to load data:', err);
+    }
+  }
+
+  private async loadAnalysis(sym: string, tf: string) {
+    const [indData, levelsData, patternsData] = await Promise.allSettled([
+      this.analysisApi.getIndicators(sym, tf),
+      this.analysisApi.getLevels(sym, tf),
+      this.analysisApi.getPatterns(sym, tf),
+    ]);
+
     if (indData.status === 'fulfilled') this.indicators.set(indData.value?.indicators);
     if (levelsData.status === 'fulfilled') this.levels.set(levelsData.value);
     if (patternsData.status === 'fulfilled') this.patterns.set(patternsData.value?.patterns || []);
+  }
+
+  async onLoadMore(oldestTime: number) {
+    try {
+      const result = await this.cryptoApi.getKlines(this.symbol(), this.timeframe(), 300, oldestTime);
+      this.tradingChart()?.prependData(result.data || []);
+    } catch (err) {
+      console.error('Failed to load more klines:', err);
+    }
   }
 
   async onGenerateReport() {
@@ -176,11 +236,7 @@ export class CoinDetail implements OnInit {
     return 'text-[var(--color-muted-foreground)]';
   }
 
-  formatNum(val: number): string {
-    if (!val) return '—';
-    if (val >= 1e12) return (val / 1e12).toFixed(2) + 'T';
-    if (val >= 1e9) return (val / 1e9).toFixed(2) + 'B';
-    if (val >= 1e6) return (val / 1e6).toFixed(2) + 'M';
-    return val.toLocaleString();
-  }
+  fp = formatPrice;
+  fpct = formatPct;
+  fc = formatCompact;
 }

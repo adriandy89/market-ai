@@ -34,6 +34,15 @@ export interface OhlcCandle {
   close: number;
 }
 
+export interface Kline {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
 export interface WatchlistItem {
   id: string;
   user_id: string;
@@ -57,6 +66,12 @@ export class CryptoApiService {
 
   getCoinHistory(symbol: string, days = 30): Promise<{ symbol: string; days: number; data: OhlcCandle[] }> {
     return firstValueFrom(this.http.get<any>(`${this.api}/crypto/history/${symbol}?days=${days}`));
+  }
+
+  getKlines(symbol: string, interval = '4h', limit = 300, endTime?: number): Promise<{ symbol: string; interval: string; data: Kline[] }> {
+    let url = `${this.api}/crypto/klines/${symbol}?interval=${interval}&limit=${limit}`;
+    if (endTime) url += `&endTime=${endTime}`;
+    return firstValueFrom(this.http.get<any>(url));
   }
 
   getWatchlist(): Promise<WatchlistItem[]> {

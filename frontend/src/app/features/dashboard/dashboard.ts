@@ -1,14 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { DecimalPipe } from '@angular/common';
 import { AuthService } from '../../core/auth/auth.service';
 import { CryptoApiService, type CoinMarket } from '../../core/services/crypto.service';
-import { AiApiService } from '../../core/services/ai.service';
+import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format';
 
 @Component({
   selector: 'app-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, DecimalPipe],
+  imports: [RouterLink],
   template: `
     <div class="animate-fade-in">
       <h1 class="text-2xl font-bold mb-6">
@@ -45,12 +44,12 @@ import { AiApiService } from '../../core/services/ai.service';
                         <span class="text-[var(--color-muted-foreground)] text-xs">{{ coin.symbol }}</span>
                       </div>
                     </td>
-                    <td class="py-3 pr-4 text-right font-mono">\${{ coin.price | number:'1.2-2' }}</td>
+                    <td class="py-3 pr-4 text-right font-mono">\${{ fp(coin.price) }}</td>
                     <td class="py-3 pr-4 text-right font-mono" [class]="coin.change24h >= 0 ? 'price-up' : 'price-down'">
-                      {{ coin.change24h >= 0 ? '+' : '' }}{{ coin.change24h | number:'1.2-2' }}%
+                      {{ coin.change24h >= 0 ? '+' : '' }}{{ fpct(coin.change24h) }}%
                     </td>
                     <td class="py-3 pr-4 text-right font-mono" [class]="coin.change7d >= 0 ? 'price-up' : 'price-down'">
-                      {{ coin.change7d >= 0 ? '+' : '' }}{{ coin.change7d | number:'1.2-2' }}%
+                      {{ coin.change7d >= 0 ? '+' : '' }}{{ fpct(coin.change7d) }}%
                     </td>
                     <td class="py-3 pr-4 text-right font-mono">\${{ formatMarketCap(coin.marketCap) }}</td>
                     <td class="py-3 text-right">
@@ -68,15 +67,35 @@ import { AiApiService } from '../../core/services/ai.service';
     </div>
   `,
 })
-export class Dashboard implements OnInit {
+export class Dashboard implements OnInit, OnDestroy {
   protected readonly auth = inject(AuthService);
   private readonly cryptoApi = inject(CryptoApiService);
-  private readonly aiApi = inject(AiApiService);
 
   coins = signal<CoinMarket[]>([]);
   loading = signal(true);
 
+  private refreshTimer: ReturnType<typeof setInterval> | null = null;
+  private visibilityHandler: (() => void) | null = null;
+
   async ngOnInit() {
+    await this.loadCoins();
+
+    // Auto-refresh every 60s (matches backend Redis cache TTL)
+    this.refreshTimer = setInterval(() => this.loadCoins(), 60_000);
+
+    // Pause when tab hidden, resume when visible
+    this.visibilityHandler = () => {
+      if (!document.hidden) this.loadCoins();
+    };
+    document.addEventListener('visibilitychange', this.visibilityHandler);
+  }
+
+  ngOnDestroy() {
+    if (this.refreshTimer) clearInterval(this.refreshTimer);
+    if (this.visibilityHandler) document.removeEventListener('visibilitychange', this.visibilityHandler);
+  }
+
+  private async loadCoins() {
     try {
       const data = await this.cryptoApi.getTopCoins(15);
       this.coins.set(data);
@@ -87,11 +106,7 @@ export class Dashboard implements OnInit {
     }
   }
 
-  formatMarketCap(value: number): string {
-    if (!value) return '—';
-    if (value >= 1e12) return (value / 1e12).toFixed(2) + 'T';
-    if (value >= 1e9) return (value / 1e9).toFixed(2) + 'B';
-    if (value >= 1e6) return (value / 1e6).toFixed(2) + 'M';
-    return value.toLocaleString();
-  }
+  fp = formatPrice;
+  fpct = formatPct;
+  formatMarketCap = formatCompact;
 }

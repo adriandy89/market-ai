@@ -4,7 +4,7 @@ services:
   redis-market:
     container_name: redis-market
     image: redis:8.4.0-alpine
-    restart: always
+    restart: unless-stopped
     ports:
       - '6379:6379'
     command: redis-server --save 20 1 --loglevel warning --requirepass Data_Redis_p6379
@@ -14,7 +14,7 @@ services:
   timescaledb-market:
     container_name: timescaledb-market
     image: timescale/timescaledb:latest-pg18
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_DB: marketaidb
       POSTGRES_USER: postgres

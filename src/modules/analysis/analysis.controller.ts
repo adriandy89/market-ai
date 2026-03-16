@@ -12,19 +12,22 @@ export class AnalysisController {
     @Param('symbol') symbol: string,
     @Query('timeframe') timeframe?: string,
   ) {
-    return this.analysisService.getIndicators(
-      symbol.toUpperCase(),
-      timeframe || '1D',
-    );
+    return this.analysisService.getIndicators(symbol.toUpperCase(), timeframe || '4h');
   }
 
   @Get(':symbol/patterns')
-  async getPatterns(@Param('symbol') symbol: string) {
-    return this.analysisService.getPatterns(symbol.toUpperCase());
+  async getPatterns(
+    @Param('symbol') symbol: string,
+    @Query('timeframe') timeframe?: string,
+  ) {
+    return this.analysisService.getPatterns(symbol.toUpperCase(), timeframe || '4h');
   }
 
   @Get(':symbol/levels')
-  async getSupportResistance(@Param('symbol') symbol: string) {
-    return this.analysisService.getSupportResistance(symbol.toUpperCase());
+  async getSupportResistance(
+    @Param('symbol') symbol: string,
+    @Query('timeframe') timeframe?: string,
+  ) {
+    return this.analysisService.getSupportResistance(symbol.toUpperCase(), timeframe || '4h');
   }
 }

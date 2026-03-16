@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CacheService, DbService } from 'src/libs';
 
 const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
+const BINANCE_BASE = 'https://data-api.binance.vision/api/v3';
+const VALID_INTERVALS = ['15m', '30m', '1h', '4h', '1d', '1w'] as const;
 
 // Pre-populated top symbols for fast lookup without needing /coins/list
 const KNOWN_SYMBOLS: Record<string, string> = {
@@ -19,11 +22,15 @@ const KNOWN_SYMBOLS: Record<string, string> = {
 @Injectable()
 export class CryptoService {
   private readonly logger = new Logger(CryptoService.name);
+  private readonly apiKey: string | undefined;
 
   constructor(
     private readonly dbService: DbService,
     private readonly cacheService: CacheService,
-  ) { }
+    private readonly configService: ConfigService,
+  ) {
+    this.apiKey = this.configService.get<string>('COINGECKO_API_KEY') || undefined;
+  }
 
   // ═══════════════ MARKET DATA ═══════════════
 
@@ -65,7 +72,7 @@ export class CryptoService {
     if (!id) return { symbol, price: 0, change24h: 0, error: 'Unknown symbol' };
 
     const data = await this.fetchCoinGecko(
-      `/simple/price?ids=${id}&vs_currency=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true`,
+      `/simple/price?ids=${id}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true`,
     );
 
     if (!data || !data[id]) return { symbol, price: 0, change24h: 0 };
@@ -133,6 +140,52 @@ export class CryptoService {
     return trending;
   }
 
+  // ═══════════════ BINANCE KLINES ═══════════════
+
+  async getKlines(symbol: string, interval: string = '4h', limit: number = 300, endTime?: number) {
+    if (!VALID_INTERVALS.includes(interval as any)) {
+      return { symbol, interval, data: [], error: 'Invalid interval' };
+    }
+    limit = Math.min(limit, 1000);
+
+    const pair = `${symbol.toUpperCase()}USDT`;
+    const cacheKey = `crypto:klines:${pair}:${interval}:${limit}:${endTime || 'latest'}`;
+    const cached = await this.cacheService.get<any>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      let url = `${BINANCE_BASE}/klines?symbol=${pair}&interval=${interval}&limit=${limit}`;
+      if (endTime) {
+        url += `&endTime=${endTime * 1000}`; // seconds → ms for Binance
+      }
+      const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+
+      if (!response.ok) {
+        const body = await response.text().catch(() => '');
+        this.logger.warn(`Binance API error: ${response.status} for ${pair} ${interval} — ${body}`);
+        return { symbol, interval, data: [] };
+      }
+
+      const raw: any[][] = await response.json();
+      const data = raw.map((k) => ({
+        time: Math.floor(k[0] / 1000),  // ms → seconds for lightweight-charts
+        open: parseFloat(k[1]),
+        high: parseFloat(k[2]),
+        low: parseFloat(k[3]),
+        close: parseFloat(k[4]),
+        volume: parseFloat(k[5]),
+      }));
+
+      const cacheTtl = ['15m', '30m'].includes(interval) ? 60 : 300;
+      const result = { symbol, interval, data };
+      await this.cacheService.set(cacheKey, result, cacheTtl);
+      return result;
+    } catch (error) {
+      this.logger.error(`Binance fetch error for ${pair} ${interval}:`, error);
+      return { symbol, interval, data: [] };
+    }
+  }
+
   // ═══════════════ WATCHLIST ═══════════════
 
   async getUserWatchlist(userId: string) {
@@ -186,12 +239,16 @@ export class CryptoService {
   private async fetchCoinGecko(endpoint: string): Promise<any> {
     try {
       const url = `${COINGECKO_BASE}${endpoint}`;
-      const response = await fetch(url, {
-        headers: { 'Accept': 'application/json' },
-      });
+      const headers: Record<string, string> = { 'Accept': 'application/json' };
+      if (this.apiKey) {
+        headers['x-cg-demo-api-key'] = this.apiKey;
+      }
+
+      const response = await fetch(url, { headers });
 
       if (!response.ok) {
-        this.logger.warn(`CoinGecko API error: ${response.status} for ${endpoint}`);
+        const body = await response.text().catch(() => '');
+        this.logger.warn(`CoinGecko API error: ${response.status} for ${endpoint} — ${body}`);
         return null;
       }
 

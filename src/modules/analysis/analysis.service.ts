@@ -3,6 +3,11 @@ import { RSI, MACD, BollingerBands, EMA, SMA, Stochastic, ADX } from 'technicali
 import { CacheService } from 'src/libs';
 import { CryptoService } from '../crypto/crypto.service';
 
+const DAYS_MAP: Record<string, number> = {
+  '15m': 1, '30m': 1, '1h': 1, '4h': 1,
+  '1d': 30, '1D': 30, '1w': 90, '1W': 90, '1M': 365,
+};
+
 @Injectable()
 export class AnalysisService {
   private readonly logger = new Logger(AnalysisService.name);
@@ -12,15 +17,12 @@ export class AnalysisService {
     private readonly cryptoService: CryptoService,
   ) { }
 
-  async getIndicators(symbol: string, timeframe: string = '1D') {
+  async getIndicators(symbol: string, timeframe: string = '1d') {
     const cacheKey = `analysis:indicators:${symbol}:${timeframe}`;
     const cached = await this.cacheService.get<any>(cacheKey);
     if (cached) return cached;
 
-    const daysMap: Record<string, number> = {
-      '1h': 1, '4h': 1, '1D': 30, '1W': 90, '1M': 365,
-    };
-    const days = daysMap[timeframe] || 30;
+    const days = DAYS_MAP[timeframe] || 30;
 
     const history = await this.cryptoService.getCoinHistory(symbol, days);
     if (!history.data || history.data.length < 14) {
@@ -107,8 +109,9 @@ export class AnalysisService {
     return result;
   }
 
-  async getPatterns(symbol: string) {
-    const history = await this.cryptoService.getCoinHistory(symbol, 7);
+  async getPatterns(symbol: string, timeframe: string = '1d') {
+    const days = DAYS_MAP[timeframe] || 7;
+    const history = await this.cryptoService.getCoinHistory(symbol, Math.max(days, 7));
     if (!history.data || history.data.length < 5) {
       return { symbol, patterns: [] };
     }
@@ -154,8 +157,9 @@ export class AnalysisService {
     return { symbol, patterns };
   }
 
-  async getSupportResistance(symbol: string) {
-    const history = await this.cryptoService.getCoinHistory(symbol, 30);
+  async getSupportResistance(symbol: string, timeframe: string = '1d') {
+    const days = DAYS_MAP[timeframe] || 30;
+    const history = await this.cryptoService.getCoinHistory(symbol, Math.max(days, 7));
     if (!history.data || history.data.length < 5) {
       return { symbol, support: [], resistance: [] };
     }
@@ -187,11 +191,11 @@ export class AnalysisService {
 
   private lastVal(arr: number[]): number | null {
     if (!arr || arr.length === 0) return null;
-    return Math.round(arr[arr.length - 1] * 100) / 100;
+    return arr[arr.length - 1];
   }
 
   private round(val: number | null | undefined): number | null {
     if (val == null) return null;
-    return Math.round(val * 100) / 100;
+    return val;
   }
 }

@@ -34,6 +34,21 @@ export class CryptoController {
     return this.cryptoService.getCoinPrice(symbol.toUpperCase());
   }
 
+  @Get('klines/:symbol')
+  async getKlines(
+    @Param('symbol') symbol: string,
+    @Query('interval') interval?: string,
+    @Query('limit') limit?: string,
+    @Query('endTime') endTime?: string,
+  ) {
+    return this.cryptoService.getKlines(
+      symbol.toUpperCase(),
+      interval || '4h',
+      limit ? parseInt(limit) : 300,
+      endTime ? parseInt(endTime) : undefined,
+    );
+  }
+
   @Get('history/:symbol')
   async getCoinHistory(
     @Param('symbol') symbol: string,
