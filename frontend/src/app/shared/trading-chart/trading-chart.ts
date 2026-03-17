@@ -22,6 +22,7 @@ import {
   LineStyle,
 } from 'lightweight-charts';
 import type { Kline } from '../../core/services/crypto.service';
+import { TranslocoPipe } from '@jsverse/transloco';
 import {
   calcEMA,
   calcSMA,
@@ -54,6 +55,7 @@ const INDICATORS: IndicatorDef[] = [
 @Component({
   selector: 'app-trading-chart',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [TranslocoPipe],
   template: `
     <div class="mb-3 flex flex-wrap items-center gap-2">
       <!-- Timeframe selector -->
@@ -110,7 +112,7 @@ const INDICATORS: IndicatorDef[] = [
               <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"></circle>
               <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="3" stroke-linecap="round" class="opacity-75"></path>
             </svg>
-            Loading...
+            {{ 'common.loading' | transloco }}
           </div>
         </div>
       }

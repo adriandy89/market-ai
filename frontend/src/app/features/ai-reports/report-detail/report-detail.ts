@@ -19,13 +19,13 @@ import { formatPrice } from '../../../shared/utils/format';
       } @else if (report()) {
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
           <h1 class="text-xl sm:text-2xl font-bold">
-            <a [routerLink]="['/coin', report()!.symbol]" class="text-[var(--color-primary)] underline hover:brightness-125 transition-all">{{ report()!.symbol }}</a> Report
+            <a [routerLink]="['/coin', report()!.symbol]" class="text-[var(--color-primary)] underline hover:brightness-125 transition-all">{{ report()!.symbol }}</a> {{ 'reports.report' | transloco }}
             @if (isComprehensive()) {
-              <span class="ml-2 text-xs px-2 py-0.5 rounded bg-[var(--color-accent)]/20 text-[var(--color-accent)]">Comprehensive</span>
+              <span class="ml-2 text-xs px-2 py-0.5 rounded bg-[var(--color-accent)]/20 text-[var(--color-accent)]">{{ 'reports.comprehensive' | transloco }}</span>
             }
           </h1>
           <span class="text-xs sm:text-sm text-[var(--color-muted-foreground)] shrink-0">
-            {{ report()!.created_at | date:'medium' }} · {{ report()!.timeframe === 'multi' ? '4h · 1d · 1w' : report()!.timeframe }}
+            {{ report()!.created_at | date:'medium' }} · {{ report()!.timeframe === 'multi' ? ('coin.multi_timeframe' | transloco) : report()!.timeframe }}
           </span>
         </div>
 
@@ -45,12 +45,12 @@ import { formatPrice } from '../../../shared/utils/format';
         <!-- ═══ LEGACY JSON: COMPREHENSIVE ═══ -->
         @else if (isComprehensive() && ai()) {
           <div class="card mb-6">
-            <h2 class="text-lg font-semibold mb-3">Executive Summary</h2>
+            <h2 class="text-lg font-semibold mb-3">{{ 'reports.executive_summary' | transloco }}</h2>
             <p class="text-[var(--color-foreground)] leading-relaxed">{{ ai().executiveSummary }}</p>
           </div>
           @if (ai().signals?.length) {
             <div class="card mb-6">
-              <h2 class="text-lg font-semibold mb-4">Signals</h2>
+              <h2 class="text-lg font-semibold mb-4">{{ 'reports.signals' | transloco }}</h2>
               <div class="space-y-2">
                 @for (sig of ai().signals; track sig.indicator + sig.source) {
                   <div class="flex items-center gap-3 text-sm">
@@ -65,7 +65,7 @@ import { formatPrice } from '../../../shared/utils/format';
           }
           @if (ai().outlook) {
             <div class="card mb-6">
-              <h2 class="text-lg font-semibold mb-3">Outlook</h2>
+              <h2 class="text-lg font-semibold mb-3">{{ 'reports.outlook' | transloco }}</h2>
               <p class="text-sm">{{ ai().outlook.shortTerm || ai().outlook }}</p>
             </div>
           }
@@ -74,11 +74,11 @@ import { formatPrice } from '../../../shared/utils/format';
         <!-- ═══ LEGACY JSON: STANDARD ═══ -->
         @else if (content()?.aiAnalysis) {
           <div class="card mb-6">
-            <h2 class="text-lg font-semibold mb-4">AI Analysis</h2>
+            <h2 class="text-lg font-semibold mb-4">{{ 'reports.ai_analysis' | transloco }}</h2>
             <p class="text-[var(--color-foreground)] leading-relaxed mb-4">{{ content()!.aiAnalysis.summary }}</p>
             @if (content()!.aiAnalysis.signals?.length) {
               <div class="mb-4">
-                <h3 class="text-sm font-medium text-[var(--color-muted-foreground)] mb-2">Signals</h3>
+                <h3 class="text-sm font-medium text-[var(--color-muted-foreground)] mb-2">{{ 'reports.signals' | transloco }}</h3>
                 <div class="space-y-1">
                   @for (sig of content()!.aiAnalysis.signals; track sig.indicator) {
                     <div class="flex items-center gap-2 text-sm">
@@ -93,13 +93,13 @@ import { formatPrice } from '../../../shared/utils/format';
             }
             @if (content()!.aiAnalysis.riskAssessment) {
               <div class="mb-4">
-                <h3 class="text-sm font-medium text-[var(--color-muted-foreground)] mb-1">Risk Assessment</h3>
+                <h3 class="text-sm font-medium text-[var(--color-muted-foreground)] mb-1">{{ 'reports.risk_assessment' | transloco }}</h3>
                 <p class="text-sm">{{ content()!.aiAnalysis.riskAssessment }}</p>
               </div>
             }
             @if (content()!.aiAnalysis.outlook) {
               <div>
-                <h3 class="text-sm font-medium text-[var(--color-muted-foreground)] mb-1">Outlook</h3>
+                <h3 class="text-sm font-medium text-[var(--color-muted-foreground)] mb-1">{{ 'reports.outlook' | transloco }}</h3>
                 <p class="text-sm">{{ content()!.aiAnalysis.outlook }}</p>
               </div>
             }

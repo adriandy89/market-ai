@@ -30,7 +30,7 @@ import { AuthService } from '../../../core/auth/auth.service';
       </div>
       <div>
         <label class="block text-sm font-medium mb-1">{{ 'auth.email' | transloco }}</label>
-        <input type="email" [(ngModel)]="email" name="email" class="input" placeholder="you@example.com" required />
+        <input type="email" [(ngModel)]="email" name="email" class="input" [placeholder]="'auth.email_placeholder' | transloco" required />
       </div>
       <div>
         <label class="block text-sm font-medium mb-1">{{ 'auth.password' | transloco }}</label>

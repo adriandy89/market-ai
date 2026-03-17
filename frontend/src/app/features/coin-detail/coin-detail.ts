@@ -40,7 +40,7 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
             </span>
           </div>
           <p class="text-sm text-[var(--color-muted-foreground)] mt-1">
-            Vol: \${{ fc(price()!.volume24h) }} · MCap: \${{ fc(price()!.marketCap) }}
+            {{ 'coin.vol' | transloco }}: \${{ fc(price()!.volume24h) }} · {{ 'coin.mcap' | transloco }}: \${{ fc(price()!.marketCap) }}
           </p>
         </div>
       }
@@ -59,7 +59,7 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
         </div>
       } @else if (chartUnavailable()) {
         <div class="card mb-6 flex items-center justify-center py-8 sm:py-12">
-          <p class="text-[var(--color-muted-foreground)] text-sm">{{ symbol() }} chart not available on Binance</p>
+          <p class="text-[var(--color-muted-foreground)] text-sm">{{ symbol() }} {{ 'coin.chart_unavailable' | transloco }}</p>
         </div>
       } @else {
         <div class="card mb-6 flex items-center justify-center h-[300px] sm:h-[400px] md:h-[500px]">
@@ -113,7 +113,7 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
               }
             </div>
           } @else {
-            <p class="text-[var(--color-muted-foreground)]">Loading indicators...</p>
+            <p class="text-[var(--color-muted-foreground)]">{{ 'common.loading_indicators' | transloco }}</p>
           }
         </div>
 
@@ -140,7 +140,7 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
               }
             </div>
           } @else {
-            <p class="text-[var(--color-muted-foreground)]">Loading levels...</p>
+            <p class="text-[var(--color-muted-foreground)]">{{ 'common.loading_levels' | transloco }}</p>
           }
         </div>
       </div>
@@ -192,11 +192,11 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
                  class="flex items-center justify-between text-sm hover:bg-[var(--color-muted)]/30 rounded p-2 -mx-2 transition-colors">
                 <div class="flex items-center gap-2 min-w-0">
                   @if (r.report_type === 'comprehensive') {
-                    <span class="text-xs px-1.5 py-0.5 rounded bg-[var(--color-accent)]/20 text-[var(--color-accent)] shrink-0">Comprehensive</span>
+                    <span class="text-xs px-1.5 py-0.5 rounded bg-[var(--color-accent)]/20 text-[var(--color-accent)] shrink-0">{{ 'coin.comprehensive' | transloco }}</span>
                   } @else {
-                    <span class="text-xs px-1.5 py-0.5 rounded bg-[var(--color-muted)] text-[var(--color-muted-foreground)] shrink-0">Standard</span>
+                    <span class="text-xs px-1.5 py-0.5 rounded bg-[var(--color-muted)] text-[var(--color-muted-foreground)] shrink-0">{{ 'coin.standard' | transloco }}</span>
                   }
-                  <span class="text-[var(--color-muted-foreground)] shrink-0">{{ r.timeframe === 'multi' ? '4h·1d·1w' : r.timeframe }}</span>
+                  <span class="text-[var(--color-muted-foreground)] shrink-0">{{ r.timeframe === 'multi' ? ('coin.multi_timeframe' | transloco) : r.timeframe }}</span>
                   <span class="truncate text-[var(--color-foreground)]">{{ r.content?.aiSummary || r.content?.aiAnalysis?.executiveSummary || r.content?.aiAnalysis?.summary || '' }}</span>
                 </div>
                 <span class="text-xs text-[var(--color-muted-foreground)] shrink-0 ml-3">{{ r.created_at | date:'short' }}</span>
@@ -209,14 +209,14 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
             <div class="flex items-center justify-between mt-4 pt-3 border-t border-[var(--color-border)]">
               <button (click)="loadReportHistory(reportPage() - 1)" [disabled]="reportPage() <= 1"
                 class="text-sm text-[var(--color-primary)] disabled:opacity-30 disabled:cursor-default hover:underline">
-                &larr; Prev
+                &larr; {{ 'common.prev' | transloco }}
               </button>
               <span class="text-xs text-[var(--color-muted-foreground)]">
-                Page {{ reportPage() }} of {{ reportTotalPages() }}
+                {{ 'common.page' | transloco }} {{ reportPage() }} {{ 'common.of' | transloco }} {{ reportTotalPages() }}
               </span>
               <button (click)="loadReportHistory(reportPage() + 1)" [disabled]="reportPage() >= reportTotalPages()"
                 class="text-sm text-[var(--color-primary)] disabled:opacity-30 disabled:cursor-default hover:underline">
-                Next &rarr;
+                {{ 'common.next' | transloco }} &rarr;
               </button>
             </div>
           }

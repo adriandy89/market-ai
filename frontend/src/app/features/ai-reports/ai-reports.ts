@@ -27,7 +27,7 @@ import { AiApiService, type AiReport } from '../../core/services/ai.service';
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2">
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="font-semibold text-[var(--color-primary)]">{{ report.symbol }}</span>
-                  <span class="text-[var(--color-muted-foreground)] text-sm">{{ report.timeframe === 'multi' ? '4h · 1d · 1w' : report.timeframe }}</span>
+                  <span class="text-[var(--color-muted-foreground)] text-sm">{{ report.timeframe === 'multi' ? ('coin.multi_timeframe' | transloco) : report.timeframe }}</span>
                   @if (report.report_type === 'comprehensive') {
                     <span class="text-xs px-1.5 py-0.5 rounded bg-[var(--color-accent)]/20 text-[var(--color-accent)]">{{ 'reports.comprehensive' | transloco }}</span>
                   } @else {

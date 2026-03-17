@@ -20,12 +20,28 @@
     "dashboard": "Dashboard",
     "reports": "Reportes AI",
     "profile": "Perfil",
-    "logout": "Cerrar sesion"
+    "logout": "Cerrar sesion",
+    "login": "Iniciar Sesion"
   },
   "landing": {
-    "subtitle": "Plataforma de analisis de criptomonedas con inteligencia artificial. Datos en tiempo real, indicadores tecnicos, analisis de sentimiento y reportes inteligentes.",
-    "get_started": "Comenzar",
-    "sign_in": "Iniciar Sesion"
+    "tagline": "Analisis cripto potenciado por IA",
+    "subtitle": "Datos en tiempo real, indicadores tecnicos, analisis de sentimiento y reportes inteligentes generados con inteligencia artificial.",
+    "explore": "Dashboard",
+    "sign_in": "Iniciar Sesion",
+    "features_title": "Todo lo que necesitas para analizar el mercado",
+    "feature_realtime_title": "Datos en Tiempo Real",
+    "feature_realtime_desc": "Precios actualizados cada 15 segundos, graficas interactivas con WebSocket y datos de mas de 200 criptomonedas.",
+    "feature_technical_title": "Indicadores Tecnicos",
+    "feature_technical_desc": "RSI, MACD, Bollinger Bands, Stochastic, ADX, EMA, SMA y mas. Analisis multi-timeframe con deteccion de patrones.",
+    "feature_sentiment_title": "Analisis de Sentimiento",
+    "feature_sentiment_desc": "Indice Fear & Greed, noticias en tiempo real, dominancia BTC y contexto macroeconomico del mercado.",
+    "feature_reports_title": "Reportes AI Inteligentes",
+    "feature_reports_desc": "Reportes profesionales generados con IA. Analisis tecnico, sentimiento, escenarios de trading y niveles clave.",
+    "latest_reports": "Ultimos Analisis AI",
+    "latest_reports_desc": "Los reportes mas recientes generados por nuestra inteligencia artificial.",
+    "view_report": "Ver reporte",
+    "no_reports_yet": "Aun no hay reportes disponibles.",
+    "footer_rights": "Todos los derechos reservados."
   },
   "auth": {
     "sign_in": "Iniciar Sesion",
@@ -40,7 +56,9 @@
     "sign_up": "Registrate",
     "has_account": "Ya tienes cuenta?",
     "account_created": "Cuenta creada! Revisa tu email para verificar tu cuenta.",
+    "email_placeholder": "tu@ejemplo.com",
     "password_placeholder": "Min 8 chars, mayuscula, numero, especial",
+    "tagline": "Analisis cripto con IA",
     "reset_password": "Restablecer Contrasena",
     "send_reset": "Enviar Link de Reset",
     "sending": "Enviando...",
@@ -74,7 +92,11 @@
     "report_history": "Historial de Reportes",
     "no_reports": "No hay reportes para",
     "vol": "Vol",
-    "mcap": "MCap"
+    "mcap": "MCap",
+    "chart_unavailable": "Grafica no disponible en Binance",
+    "comprehensive": "Completo",
+    "standard": "Estandar",
+    "multi_timeframe": "4h · 1d · 1w"
   },
   "reports": {
     "title": "Reportes AI",
@@ -83,7 +105,22 @@
     "back_to_reports": "Volver a Reportes",
     "price_at_time": "Precio al momento del reporte",
     "comprehensive": "Completo",
-    "standard": "Estandar"
+    "standard": "Estandar",
+    "report": "Reporte",
+    "executive_summary": "Resumen Ejecutivo",
+    "signals": "Senales",
+    "outlook": "Perspectiva",
+    "ai_analysis": "Analisis AI",
+    "risk_assessment": "Evaluacion de Riesgo"
+  },
+  "activate": {
+    "verifying": "Verificando tu email...",
+    "success_title": "Email Verificado!",
+    "success_message": "Tu cuenta esta activa. Ya puedes iniciar sesion.",
+    "failed_title": "Verificacion Fallida",
+    "invalid_link": "El link de verificacion es invalido o ha expirado.",
+    "no_token": "No se proporciono token de verificacion.",
+    "failed": "La verificacion fallo."
   },
   "profile": {
     "title": "Perfil",

@@ -24,7 +24,7 @@ import { LanguageService, type SupportedLang } from '../../core/services/languag
                 ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
                 : 'border-[var(--color-border)] text-[var(--color-muted-foreground)] hover:border-[var(--color-primary)]/50'"
             >
-              {{ lang.label }}
+              {{ lang.labelKey | transloco }}
             </button>
           }
         </div>
@@ -51,9 +51,9 @@ export class Profile {
   protected readonly auth = inject(AuthService);
   protected readonly langService = inject(LanguageService);
 
-  langs: { code: SupportedLang; label: string }[] = [
-    { code: 'es', label: 'Espanol' },
-    { code: 'en', label: 'English' },
+  langs: { code: SupportedLang; labelKey: string }[] = [
+    { code: 'es', labelKey: 'profile.spanish' },
+    { code: 'en', labelKey: 'profile.english' },
   ];
 
   onSetLanguage(lang: SupportedLang) {

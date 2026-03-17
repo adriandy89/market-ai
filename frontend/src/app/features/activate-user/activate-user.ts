@@ -2,12 +2,13 @@ import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@ang
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-activate-user',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, TranslocoPipe],
   template: `
     <div class="min-h-screen flex items-center justify-center p-4">
       <div class="w-full max-w-md text-center">
@@ -17,19 +18,19 @@ import { environment } from '../../../environments/environment';
 
         @if (loading()) {
           <div class="card">
-            <p class="text-[var(--color-muted-foreground)]">Verifying your email...</p>
+            <p class="text-[var(--color-muted-foreground)]">{{ 'activate.verifying' | transloco }}</p>
           </div>
         } @else if (success()) {
           <div class="card">
-            <p class="text-[var(--color-primary)] text-lg font-semibold mb-2">Email Verified!</p>
-            <p class="text-[var(--color-muted-foreground)] mb-4">Your account is now active. You can sign in.</p>
-            <a routerLink="/auth/login" class="btn-primary inline-block">Sign In</a>
+            <p class="text-[var(--color-primary)] text-lg font-semibold mb-2">{{ 'activate.success_title' | transloco }}</p>
+            <p class="text-[var(--color-muted-foreground)] mb-4">{{ 'activate.success_message' | transloco }}</p>
+            <a routerLink="/auth/login" class="btn-primary inline-block">{{ 'auth.sign_in' | transloco }}</a>
           </div>
         } @else {
           <div class="card">
-            <p class="text-[var(--color-destructive)] text-lg font-semibold mb-2">Verification Failed</p>
+            <p class="text-[var(--color-destructive)] text-lg font-semibold mb-2">{{ 'activate.failed_title' | transloco }}</p>
             <p class="text-[var(--color-muted-foreground)] mb-4">{{ errorMsg() }}</p>
-            <a routerLink="/auth/login" class="btn-secondary inline-block">Back to Login</a>
+            <a routerLink="/auth/login" class="btn-secondary inline-block">{{ 'auth.back_to_login' | transloco }}</a>
           </div>
         }
       </div>
@@ -39,16 +40,19 @@ import { environment } from '../../../environments/environment';
 export class ActivateUser implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly http = inject(HttpClient);
+  private readonly transloco = inject(TranslocoService);
 
   loading = signal(true);
   success = signal(false);
-  errorMsg = signal('The verification link is invalid or has expired.');
+  errorMsg = signal('');
 
   async ngOnInit() {
+    this.errorMsg.set(this.transloco.translate('activate.invalid_link'));
+
     const token = this.route.snapshot.queryParamMap.get('token');
     if (!token) {
       this.loading.set(false);
-      this.errorMsg.set('No verification token provided.');
+      this.errorMsg.set(this.transloco.translate('activate.no_token'));
       return;
     }
 
@@ -59,10 +63,10 @@ export class ActivateUser implements OnInit {
       if (result.success) {
         this.success.set(true);
       } else {
-        this.errorMsg.set(result.error || 'Verification failed.');
+        this.errorMsg.set(result.error || this.transloco.translate('activate.failed'));
       }
     } catch {
-      this.errorMsg.set('The verification link is invalid or has expired.');
+      this.errorMsg.set(this.transloco.translate('activate.invalid_link'));
     } finally {
       this.loading.set(false);
     }
