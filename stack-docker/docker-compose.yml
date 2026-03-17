@@ -31,4 +31,4 @@ volumes:
 
 networks:
   default:
-    name: market-network
+    name: game-network
