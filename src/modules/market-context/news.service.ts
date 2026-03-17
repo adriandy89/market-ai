@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CacheService } from 'src/libs';
 
 export interface NewsItem {
@@ -19,10 +20,17 @@ export interface NewsContext {
 @Injectable()
 export class NewsService {
   private readonly logger = new Logger(NewsService.name);
+  private readonly apiKey: string | undefined;
 
   constructor(
     private readonly cacheService: CacheService,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    this.apiKey = this.configService.get<string>('CRYPTOCOMPARE_API_KEY') || undefined;
+    if (!this.apiKey) {
+      this.logger.warn('CRYPTOCOMPARE_API_KEY not configured — news fetching will fail');
+    }
+  }
 
   async getNews(symbol: string): Promise<NewsContext> {
     const cacheKey = `market-context:news:${symbol.toUpperCase()}`;
@@ -48,7 +56,7 @@ export class NewsService {
 
   private async fetchCryptoCompareNews(symbol: string): Promise<NewsItem[]> {
     try {
-      const url = `https://min-api.cryptocompare.com/data/v2/news/?lang=EN&categories=${symbol.toUpperCase()}&excludeCategories=Sponsored`;
+      const url = `https://min-api.cryptocompare.com/data/v2/news/?lang=EN&categories=${symbol.toUpperCase()}&excludeCategories=Sponsored&api_key=${this.apiKey}`;
       const response = await fetch(url, {
         headers: { 'Accept': 'application/json' },
       });
@@ -59,8 +67,13 @@ export class NewsService {
       }
 
       const data = await response.json();
+      if (data?.Response === 'Error') {
+        this.logger.warn(`[${symbol.toUpperCase()}] CryptoCompare API error: ${data.Message}`);
+        return [];
+      }
+
       if (!data?.Data?.length) {
-        this.logger.warn(`[${symbol.toUpperCase()}] CryptoCompare returned empty or missing news data`);
+        this.logger.warn(`[${symbol.toUpperCase()}] CryptoCompare returned no news for this symbol`);
         return [];
       }
 
