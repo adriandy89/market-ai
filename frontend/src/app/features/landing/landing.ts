@@ -11,10 +11,30 @@ import { AiApiService, type AiReport } from '../../core/services/ai.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, TranslocoPipe, DatePipe],
   template: `
-    <div class="min-h-screen bg-[var(--color-background)]">
+    <div class="min-h-screen bg-[var(--color-background)] relative overflow-hidden">
+
+      <!-- Animated background -->
+      <div class="hero-bg">
+        <div class="hero-grid"></div>
+        <div class="hero-glow hero-glow-1"></div>
+        <div class="hero-glow hero-glow-2"></div>
+        <div class="hero-particles">
+          <span class="particle" style="left:10%;animation-delay:0s"></span>
+          <span class="particle" style="left:20%;animation-delay:1.5s"></span>
+          <span class="particle" style="left:35%;animation-delay:3s"></span>
+          <span class="particle" style="left:50%;animation-delay:0.8s"></span>
+          <span class="particle" style="left:65%;animation-delay:2.2s"></span>
+          <span class="particle" style="left:78%;animation-delay:4s"></span>
+          <span class="particle" style="left:88%;animation-delay:1s"></span>
+          <span class="particle" style="left:5%;animation-delay:3.5s"></span>
+          <span class="particle" style="left:42%;animation-delay:2.8s"></span>
+          <span class="particle" style="left:92%;animation-delay:0.3s"></span>
+        </div>
+        <div class="hero-scanline"></div>
+      </div>
 
       <!-- Top bar -->
-      <nav class="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
+      <nav class="relative z-10 flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
         <span class="text-xl font-bold">
           <span class="text-[var(--color-primary)]">Market</span><span class="text-[var(--color-accent)]">AI</span>
         </span>
@@ -40,7 +60,7 @@ import { AiApiService, type AiReport } from '../../core/services/ai.service';
       </nav>
 
       <!-- Hero -->
-      <section class="flex flex-col items-center justify-center text-center px-6 pt-16 pb-20 sm:pt-24 sm:pb-28">
+      <section class="relative z-10 flex flex-col items-center justify-center text-center px-6 pt-16 pb-20 sm:pt-24 sm:pb-28">
         <div class="animate-fade-in-up">
           <span class="inline-block px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase mb-6 bg-[var(--color-primary)]/10 text-[var(--color-primary)] border border-[var(--color-primary)]/20">
             {{ 'landing.tagline' | transloco }}
@@ -61,7 +81,7 @@ import { AiApiService, type AiReport } from '../../core/services/ai.service';
       </section>
 
       <!-- Features -->
-      <section class="px-6 pb-20 max-w-6xl mx-auto">
+      <section class="relative z-10 px-6 pb-20 max-w-6xl mx-auto">
         <h2 class="text-2xl sm:text-3xl font-bold text-center mb-12 animate-fade-in-up">
           {{ 'landing.features_title' | transloco }}
         </h2>
@@ -102,7 +122,7 @@ import { AiApiService, type AiReport } from '../../core/services/ai.service';
       </section>
 
       <!-- Latest Reports -->
-      <section class="px-6 pb-20 max-w-6xl mx-auto">
+      <section class="relative z-10 px-6 pb-20 max-w-6xl mx-auto">
         <div class="text-center mb-10 animate-fade-in-up">
           <h2 class="text-2xl sm:text-3xl font-bold mb-3">{{ 'landing.latest_reports' | transloco }}</h2>
           <p class="text-[var(--color-muted-foreground)]">{{ 'landing.latest_reports_desc' | transloco }}</p>
@@ -140,7 +160,7 @@ import { AiApiService, type AiReport } from '../../core/services/ai.service';
       </section>
 
       <!-- Footer -->
-      <footer class="border-t border-[var(--color-border)] px-6 py-8">
+      <footer class="relative z-10 border-t border-[var(--color-border)] px-6 py-8">
         <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-[var(--color-muted-foreground)]">
           <span>
             <span class="text-[var(--color-primary)] font-semibold">Market</span><span class="text-[var(--color-accent)] font-semibold">AI</span>
@@ -162,6 +182,113 @@ import { AiApiService, type AiReport } from '../../core/services/ai.service';
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
+    }
+
+    /* ── Animated background ── */
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    /* Grid pattern */
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(34, 197, 94, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34, 197, 94, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 20%, transparent 70%);
+      -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 20%, transparent 70%);
+      animation: grid-drift 20s linear infinite;
+    }
+
+    @keyframes grid-drift {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(60px); }
+    }
+
+    /* Glowing orbs */
+    .hero-glow {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.15;
+      animation: glow-float 8s ease-in-out infinite;
+    }
+    .hero-glow-1 {
+      width: 500px;
+      height: 500px;
+      background: hsl(160 80% 45%);
+      top: -10%;
+      left: 20%;
+      animation-delay: 0s;
+    }
+    .hero-glow-2 {
+      width: 400px;
+      height: 400px;
+      background: hsl(45 90% 55%);
+      top: 10%;
+      right: 10%;
+      animation-delay: -4s;
+      opacity: 0.08;
+    }
+
+    @keyframes glow-float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -20px) scale(1.05); }
+      66% { transform: translate(-20px, 15px) scale(0.95); }
+    }
+
+    /* Floating particles */
+    .hero-particles {
+      position: absolute;
+      inset: 0;
+    }
+    .particle {
+      position: absolute;
+      bottom: -10px;
+      width: 2px;
+      height: 2px;
+      border-radius: 50%;
+      background: hsl(160 80% 45%);
+      opacity: 0;
+      animation: particle-rise 6s ease-in infinite;
+    }
+    .particle:nth-child(even) {
+      background: hsl(45 90% 55%);
+      width: 3px;
+      height: 3px;
+    }
+
+    @keyframes particle-rise {
+      0% { opacity: 0; transform: translateY(0) scale(1); }
+      10% { opacity: 0.6; }
+      90% { opacity: 0.1; }
+      100% { opacity: 0; transform: translateY(-100vh) scale(0.3); }
+    }
+
+    /* Scanline sweep */
+    .hero-scanline {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        180deg,
+        transparent 0%,
+        rgba(34, 197, 94, 0.02) 50%,
+        transparent 100%
+      );
+      background-size: 100% 8px;
+      animation: scanline-move 4s linear infinite;
+      opacity: 0.5;
+    }
+
+    @keyframes scanline-move {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(100%); }
     }
   `],
 })

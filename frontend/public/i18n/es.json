@@ -63,7 +63,8 @@
     "send_reset": "Enviar Link de Reset",
     "sending": "Enviando...",
     "reset_sent": "Si ese email existe, recibiras un link de restablecimiento.",
-    "back_to_login": "Volver al login"
+    "back_to_login": "Volver al login",
+    "back_to_home": "Volver al inicio"
   },
   "dashboard": {
     "welcome": "Bienvenido,",

@@ -63,7 +63,8 @@
     "send_reset": "Send Reset Link",
     "sending": "Sending...",
     "reset_sent": "If that email exists, you'll receive a reset link shortly.",
-    "back_to_login": "Back to login"
+    "back_to_login": "Back to login",
+    "back_to_home": "Back to home"
   },
   "dashboard": {
     "welcome": "Welcome,",
