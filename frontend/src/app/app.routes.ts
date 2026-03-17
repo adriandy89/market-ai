@@ -41,10 +41,9 @@ export const routes: Routes = [
       },
     ],
   },
-  // ── Protected routes ──
+  // ── Public routes (with layout, no auth) ──
   {
     path: '',
-    canActivate: [authGuard],
     loadComponent: () =>
       import('./layouts/dashboard-layout/dashboard-layout').then((m) => m.DashboardLayout),
     children: [
@@ -52,16 +51,6 @@ export const routes: Routes = [
         path: 'dashboard',
         loadComponent: () =>
           import('./features/dashboard/dashboard').then((m) => m.Dashboard),
-      },
-      {
-        path: 'coin/:symbol',
-        loadComponent: () =>
-          import('./features/coin-detail/coin-detail').then((m) => m.CoinDetail),
-      },
-      {
-        path: 'profile',
-        loadComponent: () =>
-          import('./features/profile/profile').then((m) => m.Profile),
       },
       {
         path: 'reports',
@@ -72,6 +61,25 @@ export const routes: Routes = [
         path: 'reports/:id',
         loadComponent: () =>
           import('./features/ai-reports/report-detail/report-detail').then((m) => m.ReportDetail),
+      },
+    ],
+  },
+  // ── Protected routes ──
+  {
+    path: '',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./layouts/dashboard-layout/dashboard-layout').then((m) => m.DashboardLayout),
+    children: [
+      {
+        path: 'coin/:symbol',
+        loadComponent: () =>
+          import('./features/coin-detail/coin-detail').then((m) => m.CoinDetail),
+      },
+      {
+        path: 'profile',
+        loadComponent: () =>
+          import('./features/profile/profile').then((m) => m.Profile),
       },
     ],
   },

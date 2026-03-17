@@ -1,17 +1,19 @@
 import { Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { GetUserInfo } from '../auth/decorators';
-import { SessionGuard } from '../auth/guards';
+import { Role } from 'generated/prisma/enums';
+import { GetUserInfo, Permissions } from '../auth/decorators';
+import { PermissionsGuard, SessionGuard } from '../auth/guards';
 import type { SessionUser } from '../auth/interfaces';
 import { AiService } from './ai.service';
 
 @ApiTags('AI')
 @Controller('ai')
-@UseGuards(SessionGuard)
 export class AiController {
   constructor(private readonly aiService: AiService) { }
 
   @Post('report/:symbol')
+  @Permissions([Role.ADMIN])
+  @UseGuards(SessionGuard, PermissionsGuard)
   async generateReport(
     @GetUserInfo() user: SessionUser,
     @Param('symbol') symbol: string,
@@ -26,6 +28,8 @@ export class AiController {
   }
 
   @Post('report/:symbol/comprehensive')
+  @Permissions([Role.ADMIN])
+  @UseGuards(SessionGuard, PermissionsGuard)
   async generateComprehensiveReport(
     @GetUserInfo() user: SessionUser,
     @Param('symbol') symbol: string,
@@ -38,14 +42,12 @@ export class AiController {
   }
 
   @Get('reports')
-  async getUserReports(
-    @GetUserInfo() user: SessionUser,
+  async getReports(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('symbol') symbol?: string,
   ) {
-    return this.aiService.getUserReports(
-      user.id,
+    return this.aiService.getReports(
       page ? parseInt(page) : 1,
       limit ? parseInt(limit) : 10,
       symbol?.toUpperCase(),
@@ -54,9 +56,8 @@ export class AiController {
 
   @Get('reports/:id')
   async getReport(
-    @GetUserInfo() user: SessionUser,
     @Param('id') id: string,
   ) {
-    return this.aiService.getReport(id, user.id);
+    return this.aiService.getReport(id);
   }
 }

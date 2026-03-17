@@ -13,7 +13,7 @@ import { AuthService } from '../../core/auth/auth.service';
 
       <!-- Mobile top bar -->
       <div class="md:hidden flex items-center justify-between p-4 border-b border-[var(--color-border)] bg-[var(--color-sidebar)] sticky top-0 z-40">
-        <h1 class="text-lg font-bold text-[var(--color-primary)]">Market AI</h1>
+        <a routerLink="/" class="text-lg font-bold text-[var(--color-primary)] no-underline">Market AI</a>
         <button (click)="sidebarOpen.set(true)" class="text-[var(--color-foreground)] text-2xl leading-none p-1">
           &#9776;
         </button>
@@ -22,7 +22,7 @@ import { AuthService } from '../../core/auth/auth.service';
       <!-- Desktop sidebar -->
       <aside class="hidden md:flex w-64 shrink-0 bg-[var(--color-sidebar)] border-r border-[var(--color-sidebar-border)] flex-col sticky top-0 h-screen">
         <div class="p-5 border-b border-[var(--color-sidebar-border)]">
-          <h1 class="text-xl font-bold text-[var(--color-primary)]">Market AI</h1>
+          <a routerLink="/" class="text-xl font-bold text-[var(--color-primary)] no-underline">Market AI</a>
         </div>
         <ng-container *ngTemplateOutlet="navContent" />
       </aside>
@@ -33,7 +33,7 @@ import { AuthService } from '../../core/auth/auth.service';
           <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" (click)="sidebarOpen.set(false)"></div>
           <aside class="relative w-72 max-w-[80vw] h-full bg-[var(--color-sidebar)] border-r border-[var(--color-sidebar-border)] flex flex-col shadow-2xl animate-slide-in">
             <div class="p-5 border-b border-[var(--color-sidebar-border)] flex items-center justify-between">
-              <h1 class="text-xl font-bold text-[var(--color-primary)]">Market AI</h1>
+              <a routerLink="/" class="text-xl font-bold text-[var(--color-primary)] no-underline" (click)="sidebarOpen.set(false)">Market AI</a>
               <button (click)="sidebarOpen.set(false)" class="text-[var(--color-muted-foreground)] text-xl leading-none p-1 hover:text-[var(--color-foreground)]">
                 &#10005;
               </button>
@@ -56,15 +56,23 @@ import { AuthService } from '../../core/auth/auth.service';
       <nav class="flex-1 py-3 space-y-0.5">
         <a routerLink="/dashboard" routerLinkActive="nav-link-active" class="nav-link" (click)="sidebarOpen.set(false)">{{ 'nav.dashboard' | transloco }}</a>
         <a routerLink="/reports" routerLinkActive="nav-link-active" class="nav-link" (click)="sidebarOpen.set(false)">{{ 'nav.reports' | transloco }}</a>
-        <a routerLink="/profile" routerLinkActive="nav-link-active" class="nav-link" (click)="sidebarOpen.set(false)">{{ 'nav.profile' | transloco }}</a>
+        @if (auth.isAuthenticated()) {
+          <a routerLink="/profile" routerLinkActive="nav-link-active" class="nav-link" (click)="sidebarOpen.set(false)">{{ 'nav.profile' | transloco }}</a>
+        }
       </nav>
       <div class="p-4 border-t border-[var(--color-sidebar-border)]">
-        <div class="text-xs text-[var(--color-muted-foreground)] mb-2 truncate">
-          {{ auth.user()?.email }}
-        </div>
-        <button (click)="onLogout()" class="btn-secondary w-full text-sm">
-          {{ 'nav.logout' | transloco }}
-        </button>
+        @if (auth.isAuthenticated()) {
+          <div class="text-xs text-[var(--color-muted-foreground)] mb-2 truncate">
+            {{ auth.user()?.email }}
+          </div>
+          <button (click)="onLogout()" class="btn-secondary w-full text-sm">
+            {{ 'nav.logout' | transloco }}
+          </button>
+        } @else {
+          <a routerLink="/auth/login" class="btn-primary w-full text-sm block text-center" (click)="sidebarOpen.set(false)">
+            {{ 'nav.login' | transloco }}
+          </a>
+        }
       </div>
     </ng-template>
   `,

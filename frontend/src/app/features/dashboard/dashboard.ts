@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { SearchBar } from '../../shared/components/search-bar/search-bar';
-import { AuthService } from '../../core/auth/auth.service';
 import { CryptoApiService, type CoinMarket } from '../../core/services/crypto.service';
+import { MarketContextApiService, type SentimentContext } from '../../core/services/market-context.service';
 import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format';
 
 type SortKey = 'rank' | 'price' | 'change24h' | 'change7d' | 'marketCap';
@@ -11,13 +12,43 @@ type SortKey = 'rank' | 'price' | 'change24h' | 'change7d' | 'marketCap';
 @Component({
   selector: 'app-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, TranslocoPipe, SearchBar],
+  imports: [RouterLink, TranslocoPipe, SearchBar, DecimalPipe],
   template: `
     <div class="animate-fade-in">
       <!-- Search -->
       <div class="mb-6 max-w-md">
         <app-search-bar />
       </div>
+
+      <!-- Sentiment Mini-Card -->
+      @if (sentiment()) {
+        <div class="card mb-6">
+          <div class="flex flex-wrap items-center gap-4 sm:gap-6 text-sm">
+            <div>
+              <span class="text-[var(--color-muted-foreground)]">{{ 'coin.fear_greed' | transloco }}</span>
+              <span class="ml-2 font-bold font-mono text-lg"
+                [class]="sentiment()!.fearGreedIndex.value > 60 ? 'text-[var(--color-bull)]' : sentiment()!.fearGreedIndex.value < 40 ? 'text-[var(--color-bear)]' : 'text-[var(--color-accent)]'">
+                {{ sentiment()!.fearGreedIndex.value }}
+              </span>
+              <span class="ml-1 text-[var(--color-muted-foreground)]">({{ sentiment()!.fearGreedIndex.classification }})</span>
+            </div>
+            @if (sentiment()!.globalMarket.btcDominance) {
+              <div>
+                <span class="text-[var(--color-muted-foreground)]">{{ 'coin.btc_dom' | transloco }}</span>
+                <span class="ml-2 font-mono font-medium">{{ sentiment()!.globalMarket.btcDominance | number:'1.1-1' }}%</span>
+              </div>
+            }
+            @if (sentiment()!.globalMarket.marketCapChange24h) {
+              <div>
+                <span class="text-[var(--color-muted-foreground)]">{{ 'coin.market_24h' | transloco }}</span>
+                <span class="ml-2 font-mono" [class]="sentiment()!.globalMarket.marketCapChange24h >= 0 ? 'price-up' : 'price-down'">
+                  {{ sentiment()!.globalMarket.marketCapChange24h >= 0 ? '+' : '' }}{{ sentiment()!.globalMarket.marketCapChange24h | number:'1.1-2' }}%
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+      }
 
       <div class="card mb-6">
         <h2 class="text-lg font-semibold mb-4">{{ 'dashboard.top_crypto' | transloco }}</h2>
@@ -81,10 +112,11 @@ type SortKey = 'rank' | 'price' | 'change24h' | 'change7d' | 'marketCap';
   `,
 })
 export class Dashboard implements OnInit, OnDestroy {
-  protected readonly auth = inject(AuthService);
   private readonly cryptoApi = inject(CryptoApiService);
+  private readonly marketContextApi = inject(MarketContextApiService);
 
   coins = signal<CoinMarket[]>([]);
+  sentiment = signal<SentimentContext | null>(null);
   loading = signal(true);
   sortKey = signal<SortKey | null>(null);
   sortDir = signal<'asc' | 'desc'>('desc');
@@ -101,8 +133,9 @@ export class Dashboard implements OnInit, OnDestroy {
   private visibilityHandler: (() => void) | null = null;
 
   async ngOnInit() {
+    this.loadSentiment();
     await this.loadCoins();
-    this.refreshTimer = setInterval(() => this.loadCoins(), 60_000);
+    this.refreshTimer = setInterval(() => this.loadCoins(), 15_000);
     this.visibilityHandler = () => {
       if (!document.hidden) this.loadCoins();
     };
@@ -112,6 +145,15 @@ export class Dashboard implements OnInit, OnDestroy {
   ngOnDestroy() {
     if (this.refreshTimer) clearInterval(this.refreshTimer);
     if (this.visibilityHandler) document.removeEventListener('visibilitychange', this.visibilityHandler);
+  }
+
+  private async loadSentiment() {
+    try {
+      const data = await this.marketContextApi.getSentiment();
+      this.sentiment.set(data);
+    } catch (err) {
+      console.error('Failed to load sentiment:', err);
+    }
   }
 
   private async loadCoins() {

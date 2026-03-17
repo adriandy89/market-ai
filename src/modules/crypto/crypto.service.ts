@@ -83,7 +83,7 @@ export class CryptoService {
       rank: c.market_cap_rank,
     }));
 
-    await this.cacheService.set(cacheKey, coins, 60); // Cache 60s
+    await this.cacheService.set(cacheKey, coins, 15); // Cache 15s
     return coins;
   }
 

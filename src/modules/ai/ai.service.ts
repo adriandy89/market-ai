@@ -29,14 +29,14 @@ export class AiService {
     const fresh = await this.findFreshReport(symbol, timeframe, 'full', language);
     if (fresh) {
       this.logger.log(`Reusing fresh report for ${symbol}/${timeframe}/${language} (${fresh.id})`);
-      return this.cloneReportForUser(fresh, userId);
+      return fresh;
     }
 
     // Acquire lock — if another request is already generating, wait for it
     const acquired = await this.acquireReportLock(symbol, timeframe, 'full', language);
     if (!acquired) {
       this.logger.log(`Waiting for in-progress report ${symbol}/${timeframe}/${language}`);
-      const waited = await this.waitForReport(userId, symbol, timeframe, 'full', language);
+      const waited = await this.waitForReport(symbol, timeframe, 'full', language);
       if (waited) return waited;
     }
 
@@ -144,14 +144,14 @@ ${langInstruction}`,
     const fresh = await this.findFreshReport(symbol, 'multi', 'comprehensive', language);
     if (fresh) {
       this.logger.log(`Reusing fresh comprehensive report for ${symbol}/${language} (${fresh.id})`);
-      return this.cloneReportForUser(fresh, userId);
+      return fresh;
     }
 
     // Acquire lock — if another request is already generating, wait for it
     const acquired = await this.acquireReportLock(symbol, 'multi', 'comprehensive', language);
     if (!acquired) {
       this.logger.log(`Waiting for in-progress comprehensive report ${symbol}/${language}`);
-      const waited = await this.waitForReport(userId, symbol, 'multi', 'comprehensive', language);
+      const waited = await this.waitForReport(symbol, 'multi', 'comprehensive', language);
       if (waited) return waited;
     }
 
@@ -311,7 +311,13 @@ Use this exact structure:
 **Targets:** (price levels)
 **Probability:** (assessment)
 
-## Trade Setup
+## Outlook
+**Short Term:** (1-3 days)
+**Medium Term:** (1-2 weeks)
+**Key Levels:** (list of important price levels)
+
+## Trade Setup *(if any)* 
+**WARNING: Include this section ONLY if there is a clear actionable setup with defined entry, stop loss, and take profit levels. Otherwise, omit this section to avoid forcing a trade where there is no clear opportunity.**
 **Direction:** (Long/Short/Neutral)
 **Entry Zone:** (specific price range based on technical confluence across timeframes)
 **Stop Loss:** (price level + % from entry)
@@ -321,16 +327,15 @@ Use this exact structure:
 **Risk/Reward Ratio:** (X:1)
 **Position Size Suggestion:** (conservative % of portfolio based on risk level)
 **Confidence:** (Low/Medium/High — based on confluence strength and sentiment alignment)
+**Probability:** (assessment)
 **Invalidation:** (conditions that would cancel this setup)
 **Timeframe:** (recommended holding period)
 
-## Outlook
-**Short Term:** (1-3 days)
-**Medium Term:** (1-2 weeks)
-**Key Levels:** (list of important price levels)
+# IMPORTANT: base your analysis on technical analysis, sentiment, and macro factors and news. Use symbols and emojis to enhance readability, but do not use emojis in the summary. Be concise and focus on the most relevant information.
 
 ${langInstruction}`,
         messages: [{ role: 'user', content: userMessage }],
+        temperature: 0.2,
       });
 
       const textBlock = response.content.find((b) => b.type === 'text');
@@ -400,20 +405,6 @@ ${langInstruction}`,
     return reports.find((r: any) => (r.content as any)?.language === language) || null;
   }
 
-  private async cloneReportForUser(source: { id: string; user_id: string; symbol: string; timeframe: string; report_type: string; content: any }, userId: string) {
-    if (source.user_id === userId) return source;
-
-    return this.dbService.analysisReport.create({
-      data: {
-        user_id: userId,
-        symbol: source.symbol,
-        timeframe: source.timeframe,
-        report_type: source.report_type,
-        content: source.content as any,
-      },
-    });
-  }
-
   /**
    * Try to acquire a Redis lock for report generation.
    * Returns true if this request should generate the report.
@@ -433,13 +424,13 @@ ${langInstruction}`,
    * Wait for an in-progress report to finish, then return it.
    * Polls DB every 1s for up to 30s.
    */
-  private async waitForReport(userId: string, symbol: string, timeframe: string, reportType: string, language: string): Promise<any> {
+  private async waitForReport(symbol: string, timeframe: string, reportType: string, language: string): Promise<any> {
     for (let i = 0; i < 30; i++) {
       await new Promise((r) => setTimeout(r, 1000));
       const fresh = await this.findFreshReport(symbol, timeframe, reportType, language);
       if (fresh) {
         this.logger.log(`Report ready after waiting ${i + 1}s for ${symbol}/${timeframe}/${language}`);
-        return this.cloneReportForUser(fresh, userId);
+        return fresh;
       }
     }
     // Timeout — lock expired, generate anyway
@@ -447,9 +438,9 @@ ${langInstruction}`,
     return null;
   }
 
-  async getUserReports(userId: string, page: number = 1, limit: number = 10, symbol?: string) {
+  async getReports(page: number = 1, limit: number = 10, symbol?: string) {
     const skip = (page - 1) * limit;
-    const where: { user_id: string; symbol?: string } = { user_id: userId };
+    const where: { symbol?: string } = {};
     if (symbol) where.symbol = symbol;
 
     const [itemCount, reports] = await this.dbService.$transaction([
@@ -465,9 +456,9 @@ ${langInstruction}`,
     return { data: reports, meta: { itemCount, page, limit } };
   }
 
-  async getReport(reportId: string, userId: string) {
+  async getReport(reportId: string) {
     return this.dbService.analysisReport.findFirst({
-      where: { id: reportId, user_id: userId },
+      where: { id: reportId },
     });
   }
 }

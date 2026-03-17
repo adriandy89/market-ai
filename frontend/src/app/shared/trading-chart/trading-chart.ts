@@ -125,6 +125,7 @@ export class TradingChart implements OnDestroy {
   // levels input removed — S&R calculated from allData (Binance klines)
   timeframeChange = output<string>();
   loadMore = output<number>();
+  priceUpdate = output<number>();
 
   readonly timeframes = TIMEFRAMES;
   readonly indicators = INDICATORS;
@@ -348,6 +349,7 @@ export class TradingChart implements OnDestroy {
 
       this.candleSeries.update(candle);
       this.legend.set({ ...candle, volume });
+      this.priceUpdate.emit(candle.close);
 
       if (this.allData.length > 0) {
         const last = this.allData[this.allData.length - 1];

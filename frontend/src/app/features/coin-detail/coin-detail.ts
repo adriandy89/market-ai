@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, signal, computed, viewChild, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, computed, viewChild, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { DecimalPipe, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { CryptoApiService, type Kline } from '../../core/services/crypto.service';
 import { AnalysisApiService } from '../../core/services/analysis.service';
 import { AiApiService, type AiReport } from '../../core/services/ai.service';
-import { MarketContextApiService, type SentimentContext, type NewsItem } from '../../core/services/market-context.service';
+import { MarketContextApiService, type NewsItem } from '../../core/services/market-context.service';
+import { AuthService } from '../../core/auth/auth.service';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TradingChart } from '../../shared/trading-chart/trading-chart';
 import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format';
@@ -12,19 +13,21 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
 @Component({
   selector: 'app-coin-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TradingChart, DecimalPipe, DatePipe, RouterLink, TranslocoPipe],
+  imports: [TradingChart, DatePipe, RouterLink, TranslocoPipe],
   template: `
     <div class="animate-fade-in">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h1 class="text-xl sm:text-2xl font-bold">{{ symbol() }} {{ 'coin.analysis' | transloco }}</h1>
-        <div class="flex gap-2">
-          <button (click)="onGenerateReport()" class="btn-primary text-xs sm:text-sm flex-1 sm:flex-initial" [disabled]="generating()">
-            {{ generating() ? ('coin.generating' | transloco) : ('coin.ai_report' | transloco) }}
-          </button>
-          <button (click)="onGenerateComprehensive()" class="btn-primary !bg-[var(--color-accent)] !text-[var(--color-background)] text-xs sm:text-sm flex-1 sm:flex-initial" [disabled]="generatingComprehensive()">
-            {{ generatingComprehensive() ? ('coin.analyzing' | transloco) : ('coin.comprehensive_report' | transloco) }}
-          </button>
-        </div>
+        @if (isAdmin()) {
+          <div class="flex gap-2">
+            <button (click)="onGenerateReport()" class="btn-primary text-xs sm:text-sm flex-1 sm:flex-initial" [disabled]="generating()">
+              {{ generating() ? ('coin.generating' | transloco) : ('coin.ai_report' | transloco) }}
+            </button>
+            <button (click)="onGenerateComprehensive()" class="btn-primary !bg-[var(--color-accent)] !text-[var(--color-background)] text-xs sm:text-sm flex-1 sm:flex-initial" [disabled]="generatingComprehensive()">
+              {{ generatingComprehensive() ? ('coin.analyzing' | transloco) : ('coin.comprehensive_report' | transloco) }}
+            </button>
+          </div>
+        }
       </div>
 
       <!-- Price Card -->
@@ -42,36 +45,6 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
         </div>
       }
 
-      <!-- Sentiment Mini-Card -->
-      @if (sentiment()) {
-        <div class="card mb-6">
-          <div class="flex flex-wrap items-center gap-4 sm:gap-6 text-sm">
-            <div>
-              <span class="text-[var(--color-muted-foreground)]">{{ 'coin.fear_greed' | transloco }}</span>
-              <span class="ml-2 font-bold font-mono text-lg"
-                [class]="sentiment()!.fearGreedIndex.value > 60 ? 'text-[var(--color-bull)]' : sentiment()!.fearGreedIndex.value < 40 ? 'text-[var(--color-bear)]' : 'text-[var(--color-accent)]'">
-                {{ sentiment()!.fearGreedIndex.value }}
-              </span>
-              <span class="ml-1 text-[var(--color-muted-foreground)]">({{ sentiment()!.fearGreedIndex.classification }})</span>
-            </div>
-            @if (sentiment()!.globalMarket.btcDominance) {
-              <div>
-                <span class="text-[var(--color-muted-foreground)]">{{ 'coin.btc_dom' | transloco }}</span>
-                <span class="ml-2 font-mono font-medium">{{ sentiment()!.globalMarket.btcDominance | number:'1.1-1' }}%</span>
-              </div>
-            }
-            @if (sentiment()!.globalMarket.marketCapChange24h) {
-              <div>
-                <span class="text-[var(--color-muted-foreground)]">{{ 'coin.market_24h' | transloco }}</span>
-                <span class="ml-2 font-mono" [class]="sentiment()!.globalMarket.marketCapChange24h >= 0 ? 'price-up' : 'price-down'">
-                  {{ sentiment()!.globalMarket.marketCapChange24h >= 0 ? '+' : '' }}{{ sentiment()!.globalMarket.marketCapChange24h | number:'1.1-2' }}%
-                </span>
-              </div>
-            }
-          </div>
-        </div>
-      }
-
       <!-- Trading Chart -->
       @if (klines().length > 0) {
         <div class="card mb-6 !p-3">
@@ -81,6 +54,7 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
             [activeTimeframe]="timeframe()"
             (timeframeChange)="onTimeframeChange($event)"
             (loadMore)="onLoadMore($event)"
+            (priceUpdate)="onPriceUpdate($event)"
           />
         </div>
       } @else if (chartUnavailable()) {
@@ -251,15 +225,19 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
     </div>
   `,
 })
-export class CoinDetail implements OnInit {
+export class CoinDetail implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly cryptoApi = inject(CryptoApiService);
   private readonly analysisApi = inject(AnalysisApiService);
   private readonly aiApi = inject(AiApiService);
   private readonly marketContextApi = inject(MarketContextApiService);
+  private readonly authService = inject(AuthService);
 
   private tradingChart = viewChild<TradingChart>('tradingChart');
+
+  isAdmin = computed(() => this.authService.user()?.role === 'ADMIN');
+  private priceTimer: ReturnType<typeof setInterval> | null = null;
 
   symbol = signal('');
   price = signal<any>(null);
@@ -271,7 +249,6 @@ export class CoinDetail implements OnInit {
   timeframe = signal('4h');
   generating = signal(false);
   generatingComprehensive = signal(false);
-  sentiment = signal<SentimentContext | null>(null);
   news = signal<NewsItem[]>([]);
   reportHistory = signal<AiReport[]>([]);
   reportPage = signal(1);
@@ -285,10 +262,9 @@ export class CoinDetail implements OnInit {
 
     const tf = this.timeframe();
     // Load all data in parallel
-    const [priceData, klinesData, sentimentData, newsData] = await Promise.allSettled([
+    const [priceData, klinesData, newsData] = await Promise.allSettled([
       this.cryptoApi.getCoinPrice(sym),
       this.cryptoApi.getKlines(sym, tf, 300),
-      this.marketContextApi.getSentiment(),
       this.marketContextApi.getNews(sym),
     ]);
 
@@ -298,12 +274,34 @@ export class CoinDetail implements OnInit {
     } else {
       this.chartUnavailable.set(true);
     }
-    if (sentimentData.status === 'fulfilled') this.sentiment.set(sentimentData.value);
     if (newsData.status === 'fulfilled') this.news.set(newsData.value?.items || []);
 
     // Load analysis data and report history
     await this.loadAnalysis(sym, tf);
     this.loadReportHistory();
+
+    // Auto-refresh price every 30s
+    this.priceTimer = setInterval(() => this.refreshPrice(), 30_000);
+  }
+
+  ngOnDestroy() {
+    if (this.priceTimer) clearInterval(this.priceTimer);
+  }
+
+  onPriceUpdate(close: number) {
+    const current = this.price();
+    if (current) {
+      this.price.set({ ...current, price: close });
+    }
+  }
+
+  private async refreshPrice() {
+    try {
+      const data = await this.cryptoApi.getCoinPrice(this.symbol());
+      this.price.set(data);
+    } catch (err) {
+      console.error('Failed to refresh price:', err);
+    }
   }
 
   async onTimeframeChange(tf: string) {

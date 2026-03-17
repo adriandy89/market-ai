@@ -95,8 +95,8 @@ export class UserController {
   async disableMany(@Body() dto: UUIDArrayDto, @GetUserInfo() user: SessionUser) {
     try {
       return await this.userService.disableMany(dto.uuids, user.id);
-    } catch (error) {
-      throw new BadRequestException(error.message || 'Bad request');
+    } catch (error: any) {
+      throw new BadRequestException(error?.message || 'Bad request');
     }
   }
 
