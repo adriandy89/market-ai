@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { adminGuard } from './core/auth/admin.guard';
 import { authGuard } from './core/auth/auth.guard';
 import { guestGuard } from './core/auth/guest.guard';
 
@@ -90,6 +91,21 @@ export const routes: Routes = [
         title: 'Perfil | Market AI',
         loadComponent: () =>
           import('./features/profile/profile').then((m) => m.Profile),
+      },
+    ],
+  },
+  // ── Admin routes ──
+  {
+    path: '',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('./layouts/dashboard-layout/dashboard-layout').then((m) => m.DashboardLayout),
+    children: [
+      {
+        path: 'admin/scheduled-reports',
+        title: 'Reportes Programados | Market AI',
+        loadComponent: () =>
+          import('./features/admin/scheduled-reports-config').then((m) => m.ScheduledReportsConfig),
       },
     ],
   },

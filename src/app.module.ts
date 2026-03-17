@@ -10,6 +10,7 @@ import { CryptoModule } from './modules/crypto/crypto.module';
 import { AnalysisModule } from './modules/analysis/analysis.module';
 import { AiModule } from './modules/ai/ai.module';
 import { MarketContextModule } from './modules/market-context/market-context.module';
+import { ScheduledReportsModule } from './modules/scheduled-reports/scheduled-reports.module';
 import { VerificationsModule } from './modules/verifications';
 
 @Module({
@@ -52,6 +53,7 @@ import { VerificationsModule } from './modules/verifications';
     AnalysisModule,
     MarketContextModule,
     AiModule,
+    ScheduledReportsModule,
   ],
   controllers: [],
   providers: [],

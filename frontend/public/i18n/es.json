@@ -21,7 +21,8 @@
     "reports": "Reportes AI",
     "profile": "Perfil",
     "logout": "Cerrar sesion",
-    "login": "Iniciar Sesion"
+    "login": "Iniciar Sesion",
+    "admin_scheduled": "Reportes Programados"
   },
   "landing": {
     "tagline": "Analisis cripto potenciado por IA",
@@ -133,5 +134,28 @@
     "email": "Email",
     "name": "Nombre",
     "member_since": "Miembro desde"
+  },
+  "admin": {
+    "scheduled_reports": "Reportes AI Programados",
+    "new_schedule": "Nuevo Schedule",
+    "edit_schedule": "Editar Schedule",
+    "label": "Nombre",
+    "label_placeholder": "Ej: Morning BTC+ETH",
+    "enabled": "Habilitado",
+    "schedule_time": "Hora Programada (UTC)",
+    "coins": "Monedas",
+    "add_coin": "Agregar simbolo (ej: BTC)",
+    "save": "Guardar",
+    "saving": "Guardando...",
+    "cancel": "Cancelar",
+    "no_schedules": "No hay schedules configurados. Crea el primero.",
+    "last_run": "Ultima ejecucion",
+    "status_running": "En progreso",
+    "status_completed": "Completado",
+    "status_errors": "Completado con errores",
+    "failed": "fallidos",
+    "trigger_now": "Ejecutar ahora",
+    "edit": "Editar",
+    "delete": "Eliminar"
   }
 }

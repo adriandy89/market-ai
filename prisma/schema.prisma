@@ -24,9 +24,10 @@ model User {
   created_at        DateTime  @default(dbgenerated("('now'::text)::timestamp with time zone")) @db.Timestamptz(6)
   updated_at        DateTime? @updatedAt @db.Timestamptz(6)
 
-  session_logs     SessionLogs[]
-  watchlists       Watchlist[]
-  analysis_reports AnalysisReport[]
+  session_logs      SessionLogs[]
+  watchlists        Watchlist[]
+  analysis_reports  AnalysisReport[]
+  scheduled_reports ScheduledReport[]
 
   @@index([email], map: "idx_user_email")
   @@index([role])
@@ -109,6 +110,25 @@ model AnalysisReport {
   @@index([created_at], map: "idx_report_created_at")
   @@index([symbol, timeframe, report_type, created_at], map: "idx_report_lookup")
   @@map("analysis_reports")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SCHEDULED REPORTS
+// ═══════════════════════════════════════════════════════════════
+
+model ScheduledReport {
+  id          String   @id(map: "pk_scheduled_report_id") @default(uuid())
+  enabled     Boolean  @default(true)
+  label       String   @db.VarChar(100)
+  symbols     Json     @db.JsonB
+  cron_hour   Int
+  cron_minute Int
+  user_id     String
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_scheduled_report_user")
+  created_at  DateTime @default(dbgenerated("('now'::text)::timestamp with time zone")) @db.Timestamptz(6)
+  updated_at  DateTime @updatedAt @db.Timestamptz(6)
+
+  @@map("scheduled_reports")
 }
 
 // ═══════════════════════════════════════════════════════════════

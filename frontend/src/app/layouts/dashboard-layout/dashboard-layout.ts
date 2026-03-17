@@ -58,6 +58,9 @@ import { AuthService } from '../../core/auth/auth.service';
         <a routerLink="/reports" routerLinkActive="nav-link-active" class="nav-link" (click)="sidebarOpen.set(false)">{{ 'nav.reports' | transloco }}</a>
         @if (auth.isAuthenticated()) {
           <a routerLink="/profile" routerLinkActive="nav-link-active" class="nav-link" (click)="sidebarOpen.set(false)">{{ 'nav.profile' | transloco }}</a>
+          @if (auth.user()?.role === 'ADMIN') {
+            <a routerLink="/admin/scheduled-reports" routerLinkActive="nav-link-active" class="nav-link" (click)="sidebarOpen.set(false)">{{ 'nav.admin_scheduled' | transloco }}</a>
+          }
         }
       </nav>
       <div class="p-4 border-t border-[var(--color-sidebar-border)]">
