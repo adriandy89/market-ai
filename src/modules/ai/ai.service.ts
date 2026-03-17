@@ -219,9 +219,9 @@ ${langInstruction}`,
 
     // News
     if (contextData?.news?.items?.length) {
-      promptSections.push(`\n## NEWS & EVENTS (recent)\nOverall News Sentiment: ${contextData.news.overallSentiment}`);
+      promptSections.push(`\n## NEWS & EVENTS (recent)\nAnalyze the sentiment of each news item and assess the overall news sentiment.`);
       const newsLines = contextData.news.items.slice(0, 8).map(
-        (n) => `- [${n.sentiment}] ${n.title} (${n.source})`,
+        (n) => `- ${n.title} (${n.source})`,
       );
       promptSections.push(newsLines.join('\n'));
     }

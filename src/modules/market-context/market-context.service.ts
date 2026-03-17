@@ -27,7 +27,7 @@ export class MarketContextService {
     return {
       news: news.status === 'fulfilled'
         ? news.value
-        : { symbol, items: [], overallSentiment: 'neutral' as const, fetchedAt: new Date().toISOString() },
+        : { symbol, items: [], fetchedAt: new Date().toISOString() },
       sentiment: sentiment.status === 'fulfilled'
         ? sentiment.value
         : { fearGreedIndex: { value: 0, classification: 'unavailable', trend: [] }, globalMarket: { totalMarketCap: 0, totalVolume24h: 0, btcDominance: 0, marketCapChange24h: 0 }, fetchedAt: new Date().toISOString() },

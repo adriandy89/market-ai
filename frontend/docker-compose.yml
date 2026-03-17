@@ -1,4 +1,4 @@
-name: web-game
+name: market-ai-web
 
 services:
   marker-frontend:

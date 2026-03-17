@@ -8,7 +8,6 @@ export interface NewsItem {
   source: string;
   publishedAt: string;
   url: string;
-  sentiment: 'positive' | 'negative' | 'neutral';
   relevance: 'high' | 'medium' | 'low';
   kind: string;
 }
@@ -16,7 +15,6 @@ export interface NewsItem {
 export interface NewsContext {
   symbol: string;
   items: NewsItem[];
-  overallSentiment: 'positive' | 'negative' | 'mixed' | 'neutral';
   fetchedAt: string;
 }
 

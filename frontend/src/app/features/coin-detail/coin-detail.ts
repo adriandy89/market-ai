@@ -193,8 +193,7 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
           <div class="space-y-3">
             @for (n of news(); track n.url) {
               <a [href]="n.url" target="_blank" rel="noopener" class="flex items-start gap-3 text-sm hover:bg-[var(--color-muted)]/30 rounded p-2 -mx-2 transition-colors">
-                <span class="w-2 h-2 rounded-full mt-1.5 shrink-0"
-                  [class]="n.sentiment === 'positive' ? 'bg-[var(--color-bull)]' : n.sentiment === 'negative' ? 'bg-[var(--color-bear)]' : 'bg-[var(--color-muted-foreground)]'"></span>
+                <span class="w-2 h-2 rounded-full mt-1.5 shrink-0 bg-[var(--color-muted-foreground)]"></span>
                 <div class="min-w-0">
                   <p class="text-[var(--color-foreground)] line-clamp-1">{{ n.title }}</p>
                   <span class="text-xs text-[var(--color-muted-foreground)]">{{ n.source }}</span>
