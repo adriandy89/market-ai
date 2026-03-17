@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /auth/
+Disallow: /profile
+Disallow: /activate-user
+
+Sitemap: https://cripto.iotranscend.net/sitemap.xml

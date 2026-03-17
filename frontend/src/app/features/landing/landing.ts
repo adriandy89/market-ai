@@ -5,6 +5,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { LanguageService, type SupportedLang } from '../../core/services/language.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { AiApiService, type AiReport } from '../../core/services/ai.service';
+import { SeoService } from '../../core/services/seo.service';
 
 @Component({
   selector: 'app-landing',
@@ -296,11 +297,13 @@ export class Landing implements OnInit {
   protected readonly langService = inject(LanguageService);
   protected readonly auth = inject(AuthService);
   private readonly aiApi = inject(AiApiService);
+  private readonly seo = inject(SeoService);
 
   reports = signal<AiReport[]>([]);
   currentYear = new Date().getFullYear();
 
   async ngOnInit() {
+    this.seo.reset();
     try {
       const result = await this.aiApi.getReports(1, 12);
       this.reports.set(result.data);

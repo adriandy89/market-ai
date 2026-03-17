@@ -1,0 +1,21 @@
+{
+  "name": "Market AI - Crypto Analysis",
+  "short_name": "Market AI",
+  "description": "Plataforma de analisis de criptomonedas con inteligencia artificial",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0f1a",
+  "theme_color": "#0a0f1a",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    }
+  ]
+}

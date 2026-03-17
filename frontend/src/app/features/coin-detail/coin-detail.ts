@@ -6,6 +6,7 @@ import { AnalysisApiService } from '../../core/services/analysis.service';
 import { AiApiService, type AiReport } from '../../core/services/ai.service';
 import { MarketContextApiService, type NewsItem } from '../../core/services/market-context.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { SeoService } from '../../core/services/seo.service';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TradingChart } from '../../shared/trading-chart/trading-chart';
 import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format';
@@ -233,6 +234,7 @@ export class CoinDetail implements OnInit, OnDestroy {
   private readonly aiApi = inject(AiApiService);
   private readonly marketContextApi = inject(MarketContextApiService);
   private readonly authService = inject(AuthService);
+  private readonly seo = inject(SeoService);
 
   private tradingChart = viewChild<TradingChart>('tradingChart');
 
@@ -259,6 +261,10 @@ export class CoinDetail implements OnInit, OnDestroy {
   async ngOnInit() {
     const sym = this.route.snapshot.paramMap.get('symbol')?.toUpperCase() || '';
     this.symbol.set(sym);
+    this.seo.update({
+      title: `${sym} Análisis`,
+      description: `Análisis técnico y reporte AI para ${sym}. Indicadores, patrones, soporte/resistencia y más.`,
+    });
 
     const tf = this.timeframe();
     // Load all data in parallel

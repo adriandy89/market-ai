@@ -4,6 +4,7 @@ import { DatePipe } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AiApiService, type AiReport } from '../../../core/services/ai.service';
 import { MarkdownPipe } from '../../../shared/pipes/markdown.pipe';
+import { SeoService } from '../../../core/services/seo.service';
 import { formatPrice } from '../../../shared/utils/format';
 
 @Component({
@@ -112,6 +113,7 @@ import { formatPrice } from '../../../shared/utils/format';
 export class ReportDetail implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly aiApi = inject(AiApiService);
+  private readonly seo = inject(SeoService);
 
   fp = formatPrice;
   report = signal<AiReport | null>(null);
@@ -138,6 +140,12 @@ export class ReportDetail implements OnInit {
       const data = await this.aiApi.getReport(id);
       this.report.set(data);
       this.content.set(data?.content);
+      if (data) {
+        this.seo.update({
+          title: `${data.symbol} Reporte${data.report_type === 'comprehensive' ? ' Completo' : ''}`,
+          description: data.content?.aiSummary || `Reporte AI para ${data.symbol}`,
+        });
+      }
     } catch (err) {
       console.error('Failed to load report:', err);
     } finally {
