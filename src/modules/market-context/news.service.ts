@@ -41,8 +41,12 @@ export class NewsService {
   async getNews(symbol: string): Promise<NewsContext> {
     const cacheKey = `market-context:news:${symbol.toUpperCase()}`;
     const cached = await this.cacheService.get<NewsContext>(cacheKey);
-    if (cached) return cached;
+    if (cached) {
+      this.logger.log(`[${symbol.toUpperCase()}] News served from cache (${cached.items.length} items, sentiment: ${cached.overallSentiment})`);
+      return cached;
+    }
 
+    this.logger.log(`[${symbol.toUpperCase()}] Cache miss — fetching fresh news from CryptoCompare`);
     const items = await this.fetchCryptoCompareNews(symbol);
     const overallSentiment = this.computeOverallSentiment(items);
 
@@ -53,6 +57,7 @@ export class NewsService {
       fetchedAt: new Date().toISOString(),
     };
 
+    this.logger.log(`[${symbol.toUpperCase()}] News fetched successfully: ${result.items.length} items, overall sentiment: ${overallSentiment}`);
     await this.cacheService.set(cacheKey, result, 300);
     return result;
   }
@@ -70,7 +75,12 @@ export class NewsService {
       }
 
       const data = await response.json();
-      if (!data?.Data?.length) return [];
+      if (!data?.Data?.length) {
+        this.logger.warn(`[${symbol.toUpperCase()}] CryptoCompare returned empty or missing news data`);
+        return [];
+      }
+
+      this.logger.log(`[${symbol.toUpperCase()}] CryptoCompare API responded with ${data.Data.length} articles`);
 
       return data.Data.slice(0, 15).map((article: any) => {
         const text = `${article.title || ''} ${article.body || ''}`.toLowerCase();
