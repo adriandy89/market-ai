@@ -56,7 +56,7 @@ export class AiService {
     try {
       const response = await this.anthropic.messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2000,
+        max_tokens: 3500,
         system: `You are an expert crypto market analyst. Analyze the provided market data and generate a professional report in Markdown format.
 
 Use this exact structure:
@@ -101,6 +101,7 @@ ${langInstruction}`,
             content: `Analyze ${symbol} on the ${timeframe} timeframe. Here is the current market data:\n\n${marketContext}`,
           },
         ],
+        temperature: 0.2,
       });
 
       const textBlock = response.content.find((b) => b.type === 'text');
@@ -259,7 +260,7 @@ ${langInstruction}`,
     try {
       const response = await this.anthropic.messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 4096,
+        max_tokens: 5800,
         system: `You are an institutional-grade crypto market analyst. Synthesize ALL provided data into a comprehensive report in Markdown format.
 
 Use this exact structure:
