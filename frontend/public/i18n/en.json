@@ -95,7 +95,7 @@
     "no_reports": "No reports for",
     "vol": "Vol",
     "mcap": "MCap",
-    "chart_unavailable": "Chart not available on Binance",
+    "chart_unavailable": "Chart not available for this timeframe",
     "comprehensive": "Comprehensive",
     "standard": "Standard",
     "multi_timeframe": "4h · 1d · 1w"

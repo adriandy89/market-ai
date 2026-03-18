@@ -61,15 +61,23 @@ const INDICATORS: IndicatorDef[] = [
       <!-- Timeframe selector -->
       <div class="flex gap-1 mr-4">
         @for (tf of timeframes; track tf) {
-          <button
-            (click)="onTimeframeChange(tf)"
-            class="px-3 py-1.5 text-xs font-medium rounded transition-colors"
-            [class]="activeTimeframe() === tf
-              ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)]'
-              : 'bg-[var(--color-secondary)] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]'"
-          >{{ tf.toUpperCase() }}</button>
+          @if (chartSource() !== 'coingecko' || cgTimeframes.includes(tf)) {
+            <button
+              (click)="onTimeframeChange(tf)"
+              class="px-3 py-1.5 text-xs font-medium rounded transition-colors"
+              [class]="activeTimeframe() === tf
+                ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)]'
+                : 'bg-[var(--color-secondary)] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]'"
+            >{{ tf.toUpperCase() }}</button>
+          }
         }
       </div>
+
+      @if (chartSource() === 'coingecko') {
+        <span class="text-xs px-2 py-1 rounded bg-[var(--color-accent)]/15 text-[var(--color-accent)] font-medium mr-2">
+          CoinGecko OHLC
+        </span>
+      }
 
       <!-- Indicator toggles -->
       <div class="flex flex-wrap gap-1">
@@ -124,6 +132,7 @@ export class TradingChart implements OnDestroy {
   ohlcData = input.required<Kline[]>();
   symbol = input<string>('BTC');
   activeTimeframe = input<string>('4h');
+  chartSource = input<'binance' | 'coingecko'>('binance');
   // levels input removed — S&R calculated from allData (Binance klines)
   timeframeChange = output<string>();
   loadMore = output<number>();
@@ -131,6 +140,7 @@ export class TradingChart implements OnDestroy {
 
   readonly timeframes = TIMEFRAMES;
   readonly indicators = INDICATORS;
+  readonly cgTimeframes = ['4h', '1d', '1w'];
   enabled = signal<Set<string>>(new Set());
   legend = signal<{ open: number; high: number; low: number; close: number; volume: number } | null>(null);
   chartLoading = signal(false);
@@ -139,6 +149,7 @@ export class TradingChart implements OnDestroy {
   private chart: IChartApi | null = null;
   private candleSeries: ISeriesApi<'Candlestick'> | null = null;
   private seriesMap = new Map<string, ISeriesApi<any>[]>();
+  private readonly subPaneKeys = new Set(['rsi', 'macd', 'stoch']);
   private resizeObserver: ResizeObserver | null = null;
   private allData: Kline[] = [];
   private loadingMore = false;
@@ -179,12 +190,13 @@ export class TradingChart implements OnDestroy {
     const next = new Set(this.enabled());
     if (next.has(key)) {
       next.delete(key);
-      this.removeIndicator(key);
+      if (!this.subPaneKeys.has(key)) this.removeIndicator(key);
     } else {
       next.add(key);
-      this.addIndicator(key);
+      if (!this.subPaneKeys.has(key)) this.addIndicator(key);
     }
     this.enabled.set(next);
+    if (this.subPaneKeys.has(key)) this.rebuildSubPanes();
   }
 
   prependData(olderKlines: Kline[]) {
@@ -201,8 +213,15 @@ export class TradingChart implements OnDestroy {
       open: k.open, high: k.high, low: k.low, close: k.close,
     })));
 
+    // Remove main-pane indicators (series only)
     for (const key of this.enabled()) {
-      this.removeIndicator(key);
+      if (!this.subPaneKeys.has(key)) this.removeIndicator(key);
+    }
+    // Remove sub-pane indicators via removePane (handles pane + series)
+    for (const k of this.subPaneKeys) this.seriesMap.delete(k);
+    this.removeAllSubPanes();
+    // Re-add all with fresh data
+    for (const key of this.enabled()) {
       this.addIndicatorFromData(key, this.allData);
     }
 
@@ -267,7 +286,7 @@ export class TradingChart implements OnDestroy {
     // Infinite scroll
     this.chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
       if (!range || this.loadingMore || this.allData.length === 0) return;
-      if (range.from <= 5) {
+      if (range.from <= 5 && this.chartSource() !== 'coingecko') {
         this.loadingMore = true;
         this.loadMore.emit(this.allData[0].time);
       }
@@ -298,10 +317,12 @@ export class TradingChart implements OnDestroy {
     // Clear loading AFTER chart is built
     this.chartLoading.set(false);
 
-    // Start WS for real-time updates
-    this.wsDestroyed = false;
-    this.wsRetries = 0;
-    this.connectWebSocket();
+    // Start WS for real-time updates (Binance only)
+    if (this.chartSource() !== 'coingecko') {
+      this.wsDestroyed = false;
+      this.wsRetries = 0;
+      this.connectWebSocket();
+    }
   }
 
   // ═══════════════ WEBSOCKET ═══════════════
@@ -491,13 +512,14 @@ export class TradingChart implements OnDestroy {
     const rsiData = calcRSI(data);
     if (!rsiData.length) return;
 
+    const paneIdx = this.chart.panes().length;
     const subOpts = { crosshairMarkerVisible: false, lastValueVisible: false, priceLineVisible: false };
-    const rsiSeries = this.chart.addSeries(LineSeries, { ...subOpts, color: '#f59e0b', lineWidth: 2, priceScaleId: 'rsi' }, 1);
+    const rsiSeries = this.chart.addSeries(LineSeries, { ...subOpts, color: '#f59e0b', lineWidth: 2, priceScaleId: 'rsi' }, paneIdx);
     rsiSeries.setData(rsiData);
 
     const zoneOpts = { crosshairMarkerVisible: false, priceLineVisible: false, lineWidth: 1 as const, lineStyle: LineStyle.Dashed, priceScaleId: 'rsi', lastValueVisible: true };
-    const line70 = this.chart.addSeries(LineSeries, { ...zoneOpts, color: '#ef444450' }, 1);
-    const line30 = this.chart.addSeries(LineSeries, { ...zoneOpts, color: '#22c55e50' }, 1);
+    const line70 = this.chart.addSeries(LineSeries, { ...zoneOpts, color: '#ef444450' }, paneIdx);
+    const line30 = this.chart.addSeries(LineSeries, { ...zoneOpts, color: '#22c55e50' }, paneIdx);
     line70.setData(rsiData.map((d: any) => ({ time: d.time, value: 70 })));
     line30.setData(rsiData.map((d: any) => ({ time: d.time, value: 30 })));
 
@@ -509,12 +531,13 @@ export class TradingChart implements OnDestroy {
     const macdData = calcMACD(data);
     if (!macdData.macd.length) return;
 
+    const paneIdx = this.chart.panes().length;
     const subOpts = { crosshairMarkerVisible: false, lastValueVisible: false, priceLineVisible: false };
-    const histSeries = this.chart.addSeries(HistogramSeries, { ...subOpts, priceScaleId: 'macd' }, 2);
+    const histSeries = this.chart.addSeries(HistogramSeries, { ...subOpts, priceScaleId: 'macd' }, paneIdx);
     histSeries.setData(macdData.histogram);
 
-    const macdLine = this.chart.addSeries(LineSeries, { ...subOpts, color: '#3b82f6', lineWidth: 2, priceScaleId: 'macd' }, 2);
-    const signalLine = this.chart.addSeries(LineSeries, { ...subOpts, color: '#ef4444', lineWidth: 1, priceScaleId: 'macd' }, 2);
+    const macdLine = this.chart.addSeries(LineSeries, { ...subOpts, color: '#3b82f6', lineWidth: 2, priceScaleId: 'macd' }, paneIdx);
+    const signalLine = this.chart.addSeries(LineSeries, { ...subOpts, color: '#ef4444', lineWidth: 1, priceScaleId: 'macd' }, paneIdx);
     macdLine.setData(macdData.macd);
     signalLine.setData(macdData.signal);
 
@@ -526,15 +549,16 @@ export class TradingChart implements OnDestroy {
     const stochData = calcStochastic(data);
     if (!stochData.k.length) return;
 
+    const paneIdx = this.chart.panes().length;
     const subOpts = { crosshairMarkerVisible: false, lastValueVisible: false, priceLineVisible: false };
-    const kLine = this.chart.addSeries(LineSeries, { ...subOpts, color: '#10b981', lineWidth: 2, priceScaleId: 'stoch' }, 3);
-    const dLine = this.chart.addSeries(LineSeries, { ...subOpts, color: '#f59e0b', lineWidth: 1, priceScaleId: 'stoch' }, 3);
+    const kLine = this.chart.addSeries(LineSeries, { ...subOpts, color: '#10b981', lineWidth: 2, priceScaleId: 'stoch' }, paneIdx);
+    const dLine = this.chart.addSeries(LineSeries, { ...subOpts, color: '#f59e0b', lineWidth: 1, priceScaleId: 'stoch' }, paneIdx);
     kLine.setData(stochData.k);
     dLine.setData(stochData.d);
 
     const zoneOpts = { ...subOpts, lineWidth: 1 as const, lineStyle: LineStyle.Dashed, priceScaleId: 'stoch' };
-    const zone80 = this.chart.addSeries(LineSeries, { ...zoneOpts, color: '#ef444450' }, 3);
-    const zone20 = this.chart.addSeries(LineSeries, { ...zoneOpts, color: '#22c55e50' }, 3);
+    const zone80 = this.chart.addSeries(LineSeries, { ...zoneOpts, color: '#ef444450' }, paneIdx);
+    const zone20 = this.chart.addSeries(LineSeries, { ...zoneOpts, color: '#22c55e50' }, paneIdx);
     zone80.setData(stochData.k.map((d: any) => ({ time: d.time, value: 80 })));
     zone20.setData(stochData.k.map((d: any) => ({ time: d.time, value: 20 })));
 
@@ -585,6 +609,30 @@ export class TradingChart implements OnDestroy {
         this.chart.removeSeries(s);
       }
       this.seriesMap.delete(key);
+    }
+  }
+
+  /** Remove all non-main panes (bottom to top) */
+  private removeAllSubPanes() {
+    if (!this.chart) return;
+    while (this.chart.panes().length > 1) {
+      this.chart.removePane(this.chart.panes().length - 1);
+    }
+  }
+
+  /** Nuke all sub-pane indicators and rebuild only the enabled ones */
+  private rebuildSubPanes() {
+    if (!this.chart) return;
+    // Clear our tracking (removePane will handle the actual series removal)
+    for (const k of this.subPaneKeys) this.seriesMap.delete(k);
+    // Remove all non-main panes (removes both panes AND their series)
+    this.removeAllSubPanes();
+    // Re-add only the enabled sub-indicators with fresh panes
+    const data = this.allData.length ? this.allData : this.ohlcData();
+    for (const k of this.subPaneKeys) {
+      if (this.enabled().has(k)) {
+        this.addIndicatorFromData(k, data);
+      }
     }
   }
 }

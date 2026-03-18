@@ -80,7 +80,7 @@ export class CryptoApiService {
     return firstValueFrom(this.http.get<any>(`${this.api}/crypto/history/${symbol}?days=${days}`));
   }
 
-  getKlines(symbol: string, interval = '4h', limit = 300, endTime?: number): Promise<{ symbol: string; interval: string; data: Kline[] }> {
+  getKlines(symbol: string, interval = '4h', limit = 300, endTime?: number): Promise<{ symbol: string; interval: string; data: Kline[]; source?: string }> {
     let url = `${this.api}/crypto/klines/${symbol}?interval=${interval}&limit=${limit}`;
     if (endTime) url += `&endTime=${endTime}`;
     return firstValueFrom(this.http.get<any>(url));

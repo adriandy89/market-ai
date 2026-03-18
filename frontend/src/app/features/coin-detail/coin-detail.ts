@@ -53,6 +53,7 @@ import { formatPrice, formatPct, formatCompact } from '../../shared/utils/format
             [ohlcData]="klines()"
             [symbol]="symbol()"
             [activeTimeframe]="timeframe()"
+            [chartSource]="chartSource()"
             (timeframeChange)="onTimeframeChange($event)"
             (loadMore)="onLoadMore($event)"
             (priceUpdate)="onPriceUpdate($event)"
@@ -248,6 +249,7 @@ export class CoinDetail implements OnInit, OnDestroy {
   patterns = signal<any[]>([]);
   klines = signal<Kline[]>([]);
   chartUnavailable = signal(false);
+  chartSource = signal<'binance' | 'coingecko'>('binance');
   timeframe = signal('4h');
   generating = signal(false);
   generatingComprehensive = signal(false);
@@ -277,6 +279,7 @@ export class CoinDetail implements OnInit, OnDestroy {
     if (priceData.status === 'fulfilled') this.price.set(priceData.value);
     if (klinesData.status === 'fulfilled' && klinesData.value?.data?.length) {
       this.klines.set(klinesData.value.data);
+      this.chartSource.set((klinesData.value as any).source || 'binance');
     } else {
       this.chartUnavailable.set(true);
     }
@@ -318,7 +321,10 @@ export class CoinDetail implements OnInit, OnDestroy {
       const [klinesData] = await Promise.allSettled([
         this.cryptoApi.getKlines(sym, tf, 300),
       ]);
-      if (klinesData.status === 'fulfilled') this.klines.set(klinesData.value?.data || []);
+      if (klinesData.status === 'fulfilled') {
+        this.klines.set(klinesData.value?.data || []);
+        this.chartSource.set((klinesData.value as any)?.source || 'binance');
+      }
       await this.loadAnalysis(sym, tf);
     } catch (err) {
       console.error('Failed to load data:', err);

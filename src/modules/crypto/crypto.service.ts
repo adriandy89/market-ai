@@ -17,6 +17,10 @@ const KNOWN_SYMBOLS: Record<string, string> = {
   TIA: 'celestia', INJ: 'injective-protocol', FET: 'fetch-ai',
   RENDER: 'render-token', PEPE: 'pepe', WIF: 'dogwifcoin',
   BONK: 'bonk', TRX: 'tron', TON: 'the-open-network',
+  XMR: 'monero', ALGO: 'algorand', ICP: 'internet-computer',
+  HBAR: 'hedera-hashgraph', ETC: 'ethereum-classic', BCH: 'bitcoin-cash',
+  AAVE: 'aave', MKR: 'maker', GRT: 'the-graph', VET: 'vechain',
+  IMX: 'immutable-x', STX: 'blockstack', KAS: 'kaspa', CRO: 'crypto-com-chain',
 };
 
 @Injectable()
@@ -164,12 +168,12 @@ export class CryptoService {
     return trending;
   }
 
-  // ═══════════════ BINANCE KLINES ═══════════════
+  // ═══════════════ KLINES (Binance → CoinGecko fallback) ═══════════════
 
   async getKlines(symbol: string, interval: string = '4h', limit: number = 300, endTime?: number) {
     interval = interval.toLowerCase();
     if (!VALID_INTERVALS.includes(interval as any)) {
-      return { symbol, interval, data: [], error: 'Invalid interval' };
+      return { symbol, interval, data: [], source: 'binance' as const, error: 'Invalid interval' };
     }
     limit = Math.min(limit, 1000);
 
@@ -178,6 +182,7 @@ export class CryptoService {
     const cached = await this.cacheService.get<any>(cacheKey);
     if (cached) return cached;
 
+    // Try Binance first
     try {
       let url = `${BINANCE_BASE}/klines?symbol=${pair}&interval=${interval}&limit=${limit}`;
       if (endTime) {
@@ -185,30 +190,85 @@ export class CryptoService {
       }
       const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
 
-      if (!response.ok) {
+      if (response.ok) {
+        const raw: any[][] = await response.json();
+
+        if (raw.length > 0 && !this.isKlinesStale(raw, interval)) {
+          const data = raw.map((k) => ({
+            time: Math.floor(k[0] / 1000),  // ms → seconds for lightweight-charts
+            open: parseFloat(k[1]),
+            high: parseFloat(k[2]),
+            low: parseFloat(k[3]),
+            close: parseFloat(k[4]),
+            volume: parseFloat(k[5]),
+          }));
+
+          const cacheTtl = ['15m', '30m'].includes(interval) ? 60 : 300;
+          const result = { symbol, interval, data, source: 'binance' as const };
+          await this.cacheService.set(cacheKey, result, cacheTtl);
+          return result;
+        }
+
+        this.logger.warn(`Stale/empty Binance data for ${pair} ${interval} — falling back to CoinGecko`);
+      } else {
         const body = await response.text().catch(() => '');
         this.logger.warn(`Binance API error: ${response.status} for ${pair} ${interval} — ${body}`);
-        return { symbol, interval, data: [] };
       }
-
-      const raw: any[][] = await response.json();
-      const data = raw.map((k) => ({
-        time: Math.floor(k[0] / 1000),  // ms → seconds for lightweight-charts
-        open: parseFloat(k[1]),
-        high: parseFloat(k[2]),
-        low: parseFloat(k[3]),
-        close: parseFloat(k[4]),
-        volume: parseFloat(k[5]),
-      }));
-
-      const cacheTtl = ['15m', '30m'].includes(interval) ? 60 : 300;
-      const result = { symbol, interval, data };
-      await this.cacheService.set(cacheKey, result, cacheTtl);
-      return result;
     } catch (error) {
       this.logger.error(`Binance fetch error for ${pair} ${interval}:`, error);
-      return { symbol, interval, data: [] };
     }
+
+    // Fallback: CoinGecko OHLC
+    return this.getKlinesFallback(symbol, interval, endTime);
+  }
+
+  private isKlinesStale(raw: any[][], interval: string): boolean {
+    const lastCandle = raw[raw.length - 1];
+    if (!lastCandle) return true;
+
+    const lastCloseTime = lastCandle[6] as number; // Binance kline close time (ms)
+    const intervalMs: Record<string, number> = {
+      '15m': 15 * 60_000, '30m': 30 * 60_000, '1h': 60 * 60_000,
+      '4h': 4 * 3_600_000, '1d': 86_400_000, '1w': 604_800_000,
+    };
+    const threshold = (intervalMs[interval] || 14_400_000) * 3;
+    return (Date.now() - lastCloseTime) > threshold;
+  }
+
+  private async getKlinesFallback(symbol: string, interval: string, endTime?: number) {
+    // CoinGecko OHLC granularity: days=30 → 4h candles, days=365 → 4-day candles
+    const cgDaysMap: Record<string, number> = { '4h': 30, '1d': 365, '1w': 365 };
+    const days = cgDaysMap[interval];
+
+    // CoinGecko doesn't support fine-grained intervals or pagination
+    if (!days || endTime) {
+      return { symbol, interval, data: [], source: 'coingecko' as const };
+    }
+
+    const cacheKey = `crypto:klines-cg:${symbol}:${interval}`;
+    const cached = await this.cacheService.get<any>(cacheKey);
+    if (cached) return cached;
+
+    const id = await this.resolveSymbolToId(symbol);
+    if (!id) return { symbol, interval, data: [], source: 'coingecko' as const };
+
+    const ohlc = await this.fetchCoinGecko(`/coins/${id}/ohlc?vs_currency=usd&days=${days}`);
+    if (!ohlc || !Array.isArray(ohlc)) {
+      return { symbol, interval, data: [], source: 'coingecko' as const };
+    }
+
+    const data = ohlc.map((candle: number[]) => ({
+      time: Math.floor(candle[0] / 1000),
+      open: candle[1],
+      high: candle[2],
+      low: candle[3],
+      close: candle[4],
+      volume: 0,
+    }));
+
+    const result = { symbol, interval, data, source: 'coingecko' as const };
+    await this.cacheService.set(cacheKey, result, 300);
+    return result;
   }
 
   // ═══════════════ WATCHLIST ═══════════════
