@@ -216,7 +216,7 @@ export class CryptoService {
       if (response.ok) {
         const raw: any[][] = await response.json();
 
-        if (raw.length > 0 && !this.isKlinesStale(raw, interval)) {
+        if (raw.length > 0 && !this.isKlinesStale(raw, interval, endTime)) {
           const data = raw.map((k) => ({
             time: Math.floor(k[0] / 1000),  // ms → seconds for lightweight-charts
             open: parseFloat(k[1]),
@@ -247,7 +247,7 @@ export class CryptoService {
     return this.getKlinesFallback(symbol, interval, endTime);
   }
 
-  private isKlinesStale(raw: any[][], interval: string): boolean {
+  private isKlinesStale(raw: any[][], interval: string, endTime?: number): boolean {
     const lastCandle = raw[raw.length - 1];
     if (!lastCandle) return true;
 
@@ -257,7 +257,8 @@ export class CryptoService {
       '4h': 4 * 3_600_000, '1d': 86_400_000, '1w': 604_800_000,
     };
     const threshold = (intervalMs[interval] || 14_400_000) * 3;
-    return (Date.now() - lastCloseTime) > threshold;
+    const referenceTime = endTime ? endTime * 1000 : Date.now(); // endTime is in seconds
+    return (referenceTime - lastCloseTime) > threshold;
   }
 
   private async getKlinesFallback(symbol: string, interval: string, endTime?: number) {

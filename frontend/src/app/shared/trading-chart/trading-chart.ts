@@ -200,7 +200,7 @@ export class TradingChart implements OnDestroy {
   }
 
   prependData(olderKlines: Kline[]) {
-    if (!olderKlines.length || !this.chart || !this.candleSeries) return;
+    if (!olderKlines.length || !this.chart || !this.candleSeries) { this.loadingMore = false; return; }
 
     const existingTimes = new Set(this.allData.map(k => k.time));
     const unique = olderKlines.filter(k => !existingTimes.has(k.time));
