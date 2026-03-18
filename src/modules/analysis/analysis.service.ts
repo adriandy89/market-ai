@@ -98,7 +98,7 @@ export class AnalysisService {
       },
     };
 
-    await this.cacheService.set(cacheKey, result, 300);
+    await this.cacheService.set(cacheKey, result, 10); // Cache 10s
     return result;
   }
 
@@ -151,7 +151,7 @@ export class AnalysisService {
     }
 
     const result = { symbol, patterns };
-    await this.cacheService.set(cacheKey, result, 300);
+    await this.cacheService.set(cacheKey, result, 10); // Cache 10s
     return result;
   }
 
@@ -190,7 +190,7 @@ export class AnalysisService {
       ],
     };
 
-    await this.cacheService.set(cacheKey, result, 300);
+    await this.cacheService.set(cacheKey, result, 10); // Cache 10s
     return result;
   }
 

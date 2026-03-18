@@ -87,7 +87,7 @@ export class CryptoService {
       rank: c.market_cap_rank,
     }));
 
-    await this.cacheService.set(cacheKey, coins, 15); // Cache 15s
+    await this.cacheService.set(cacheKey, coins, 10); // Cache 10s
     return coins;
   }
 
@@ -114,7 +114,7 @@ export class CryptoService {
       marketCap: data[id].usd_market_cap,
     };
 
-    await this.cacheService.set(cacheKey, result, 30); // Cache 30s
+    await this.cacheService.set(cacheKey, result, 10); // Cache 10s
     return result;
   }
 
@@ -142,7 +142,7 @@ export class CryptoService {
     }));
 
     const result = { symbol, days, data: ohlc };
-    await this.cacheService.set(cacheKey, result, 300); // Cache 5min
+    await this.cacheService.set(cacheKey, result, 60); // Cache 60s
     return result;
   }
 
@@ -166,6 +166,29 @@ export class CryptoService {
 
     await this.cacheService.set(cacheKey, trending, 300); // Cache 5min
     return trending;
+  }
+
+  async getBinancePrice(symbol: string): Promise<number | null> {
+    const pair = `${symbol.toUpperCase()}USDT`;
+    const cacheKey = `crypto:binance-price:${pair}`;
+    const cached = await this.cacheService.get<number>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const url = `${BINANCE_BASE}/ticker/price?symbol=${pair}`;
+      const response = await fetch(url, { headers: { Accept: 'application/json' } });
+      if (!response.ok) return null;
+
+      const data = await response.json();
+      const price = parseFloat(data.price);
+      if (!price || isNaN(price)) return null;
+
+      await this.cacheService.set(cacheKey, price, 10); // Cache 10s
+      return price;
+    } catch (error) {
+      this.logger.error(`Binance price fetch error for ${pair}:`, error);
+      return null;
+    }
   }
 
   // ═══════════════ KLINES (Binance → CoinGecko fallback) ═══════════════
@@ -203,7 +226,7 @@ export class CryptoService {
             volume: parseFloat(k[5]),
           }));
 
-          const cacheTtl = ['15m', '30m'].includes(interval) ? 60 : 300;
+          const cacheTtl = 10; // Cache 10s — Binance allows 1200 req/min
           const result = { symbol, interval, data, source: 'binance' as const };
           await this.cacheService.set(cacheKey, result, cacheTtl);
           return result;
@@ -267,7 +290,7 @@ export class CryptoService {
     }));
 
     const result = { symbol, interval, data, source: 'coingecko' as const };
-    await this.cacheService.set(cacheKey, result, 300);
+    await this.cacheService.set(cacheKey, result, 60); // Cache 60s — CoinGecko fallback
     return result;
   }
 

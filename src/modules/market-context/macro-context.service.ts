@@ -62,7 +62,7 @@ export class MacroContextService {
       fetchedAt: new Date().toISOString(),
     };
 
-    await this.cacheService.set(cacheKey, result, 900);
+    await this.cacheService.set(cacheKey, result, 300); // Cache 5min
     return result;
   }
 

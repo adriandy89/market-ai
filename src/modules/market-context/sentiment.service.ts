@@ -52,7 +52,7 @@ export class SentimentService {
       fetchedAt: new Date().toISOString(),
     };
 
-    await this.cacheService.set(cacheKey, result, 600);
+    await this.cacheService.set(cacheKey, result, 120); // Cache 2min
     return result;
   }
 

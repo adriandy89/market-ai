@@ -8,5 +8,6 @@ import { PriceAlertsService } from './price-alerts.service';
   imports: [CryptoModule],
   controllers: [PriceAlertsController],
   providers: [PriceAlertsService, PriceAlertsChecker],
+  exports: [PriceAlertsService],
 })
 export class PriceAlertsModule {}

@@ -1,6 +1,7 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CacheService, DbService } from 'src/libs';
+import { TelegramBotHandler } from './telegram-bot-handler.service';
 const TelegramBot = require('node-telegram-bot-api');
 
 @Injectable()
@@ -15,6 +16,8 @@ export class TelegramService implements OnModuleInit {
     private readonly config: ConfigService,
     private readonly dbService: DbService,
     private readonly cacheService: CacheService,
+    @Inject(forwardRef(() => TelegramBotHandler))
+    private readonly botHandler: TelegramBotHandler,
   ) {
     this.botToken = this.config.get<string>('TELEGRAM_BOT_TOKEN', '');
     this.webhookUrl = this.config.get<string>('TELEGRAM_WEBHOOK_URL', '');
@@ -46,6 +49,12 @@ export class TelegramService implements OnModuleInit {
       await this.bot.setWebHook(this.webhookUrl, {
         secret_token: this.webhookSecret,
       });
+
+      await this.bot.setMyCommands([
+        { command: 'alertas', description: 'Ver y gestionar alertas de precio' },
+        { command: 'start', description: 'Iniciar y vincular cuenta' },
+      ]);
+
       this.logger.log(`Webhook configured at: ${this.webhookUrl}`);
     } catch (error: any) {
       this.logger.error(`Error configuring webhook: ${error.message}`, error.stack);
@@ -96,9 +105,11 @@ export class TelegramService implements OnModuleInit {
 
       await this.bot.sendMessage(
         chatId,
-        '✅ <b>Cuenta vinculada exitosamente!</b>\n\nRecibirás notificaciones de alertas de precio de <b>Market AI</b> en este chat. 📈\n\n<i>Puedes gestionar tus alertas desde la plataforma.</i>',
+        '✅ <b>Cuenta vinculada exitosamente!</b>\n\nRecibirás notificaciones de alertas de precio de <b>Market AI</b> en este chat. 📈',
         { parse_mode: 'HTML' },
       );
+
+      await this.botHandler.handleAlertasCommand(chatId);
       return true;
     } catch (error: any) {
       this.logger.error(`Error linking account: ${error.message}`, error.stack);
@@ -108,6 +119,57 @@ export class TelegramService implements OnModuleInit {
         { parse_mode: 'HTML' },
       );
       return false;
+    }
+  }
+
+  async sendMessageWithKeyboard(
+    chatId: string,
+    text: string,
+    keyboard: any[][],
+    parseMode: string = 'HTML',
+  ): Promise<any> {
+    if (!this.bot) return null;
+    try {
+      return await this.bot.sendMessage(chatId, text, {
+        parse_mode: parseMode,
+        reply_markup: { inline_keyboard: keyboard },
+        disable_web_page_preview: true,
+      });
+    } catch (error: any) {
+      this.logger.error(`Error sending keyboard message: ${error.message}`);
+      return null;
+    }
+  }
+
+  async editMessageWithKeyboard(
+    chatId: string,
+    messageId: number,
+    text: string,
+    keyboard: any[][],
+    parseMode: string = 'HTML',
+  ): Promise<any> {
+    if (!this.bot) return null;
+    try {
+      return await this.bot.editMessageText(text, {
+        chat_id: chatId,
+        message_id: messageId,
+        parse_mode: parseMode,
+        reply_markup: { inline_keyboard: keyboard },
+        disable_web_page_preview: true,
+      });
+    } catch (error: any) {
+      if (error.message?.includes('message is not modified')) return null;
+      this.logger.error(`Error editing keyboard message: ${error.message}`);
+      return null;
+    }
+  }
+
+  async answerCallbackQuery(callbackQueryId: string, text?: string): Promise<void> {
+    if (!this.bot) return;
+    try {
+      await this.bot.answerCallbackQuery(callbackQueryId, { text });
+    } catch (error: any) {
+      this.logger.error(`Error answering callback query: ${error.message}`);
     }
   }
 
@@ -174,7 +236,9 @@ export class TelegramService implements OnModuleInit {
         return { success: false, error: 'Invalid secret token' };
       }
 
-      if (update.message) {
+      if (update.callback_query) {
+        await this.botHandler.handleCallbackQuery(update.callback_query);
+      } else if (update.message) {
         await this.handleMessage(update.message);
       }
     } catch (error: any) {
@@ -192,6 +256,8 @@ export class TelegramService implements OnModuleInit {
         '👋 <b>Bienvenido a Market AI!</b>\n\nPara vincular tu cuenta y recibir alertas de precio:\n\n1️⃣ Ve a tu <b>Perfil</b> en Market AI\n2️⃣ Haz clic en <b>Vincular Telegram</b>\n3️⃣ Copia el código de verificación y envíalo aquí con el comando /verify',
         { parse_mode: 'HTML' },
       );
+    } else if (text === '/alertas' || text === '/alerts') {
+      await this.botHandler.handleAlertasCommand(chatId.toString());
     } else if (text?.startsWith('/verify ')) {
       const code = text.substring(8);
       await this.verifyAndLinkAccount(chatId.toString(), code);

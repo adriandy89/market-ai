@@ -50,7 +50,7 @@ export class NewsService {
     };
 
     this.logger.log(`[${symbol.toUpperCase()}] News fetched successfully: ${result.items.length} items`);
-    await this.cacheService.set(cacheKey, result, 300);
+    await this.cacheService.set(cacheKey, result, 120); // Cache 2min
     return result;
   }
 
