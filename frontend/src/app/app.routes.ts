@@ -92,6 +92,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/profile/profile').then((m) => m.Profile),
       },
+      {
+        path: 'alerts',
+        title: 'Alertas | Market AI',
+        loadComponent: () =>
+          import('./features/price-alerts/price-alerts').then((m) => m.PriceAlerts),
+      },
     ],
   },
   // ── Admin routes ──

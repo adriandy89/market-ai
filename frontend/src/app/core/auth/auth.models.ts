@@ -5,6 +5,15 @@ export interface SessionUser {
   disabled: boolean;
   role: string;
   language: string;
+  telegram_chat_id?: string | null;
+}
+
+export interface TelegramCodeResponse {
+  success: boolean;
+  code?: string;
+  botLink?: string;
+  instructions?: string;
+  error?: string;
 }
 
 export interface SignInRequest {

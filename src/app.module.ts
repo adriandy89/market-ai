@@ -10,7 +10,9 @@ import { CryptoModule } from './modules/crypto/crypto.module';
 import { AnalysisModule } from './modules/analysis/analysis.module';
 import { AiModule } from './modules/ai/ai.module';
 import { MarketContextModule } from './modules/market-context/market-context.module';
+import { PriceAlertsModule } from './modules/price-alerts/price-alerts.module';
 import { ScheduledReportsModule } from './modules/scheduled-reports/scheduled-reports.module';
+import { TelegramModule } from './modules/telegram/telegram.module';
 import { VerificationsModule } from './modules/verifications';
 
 @Module({
@@ -46,6 +48,7 @@ import { VerificationsModule } from './modules/verifications';
     }),
     // Core modules
     VerificationsModule,
+    TelegramModule,
     AuthModule,
     UserModule,
     // Domain modules
@@ -54,6 +57,7 @@ import { VerificationsModule } from './modules/verifications';
     MarketContextModule,
     AiModule,
     ScheduledReportsModule,
+    PriceAlertsModule,
   ],
   controllers: [],
   providers: [],
