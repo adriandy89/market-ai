@@ -19,9 +19,9 @@ export class PriceAlertsChecker {
     private readonly cacheService: CacheService,
   ) { }
 
-  @Interval(60_000)
+  @Interval(10_000)
   async checkAlerts() {
-    const lockAcquired = await this.cacheService.setNx('price-alerts:checker:lock', '1', 55);
+    const lockAcquired = await this.cacheService.setNx('price-alerts:checker:lock', '1', 8);
     if (!lockAcquired) return;
 
     try {

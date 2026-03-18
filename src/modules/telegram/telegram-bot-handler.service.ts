@@ -338,7 +338,7 @@ export class TelegramBotHandler {
       '',
       '🔄 <b>Refrescar:</b> Actualiza precios y estado de alertas.',
       '',
-      '💡 Las alertas se evalúan cada 60 segundos.',
+      '💡 Las alertas se evalúan cada 10 segundos.',
       '',
       '🌐 Para más opciones (precio fijo, ventana de tiempo), usa la plataforma web.',
     ].join('\n');
