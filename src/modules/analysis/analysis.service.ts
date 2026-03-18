@@ -19,7 +19,7 @@ export class AnalysisService {
 
     const klines = await this.cryptoService.getKlines(symbol, timeframe, 300);
     if (!klines.data || klines.data.length < 14) {
-      return { symbol, timeframe, indicators: null, error: 'Insufficient data' };
+      return { symbol, timeframe, indicators: null, source: klines.source, error: 'Insufficient data' };
     }
 
     const closes = klines.data.map((c: any) => c.close);
@@ -65,6 +65,7 @@ export class AnalysisService {
       symbol,
       timeframe,
       currentPrice,
+      source: klines.source,
       indicators: {
         rsi: {
           value: rsiCurrent,
@@ -109,7 +110,7 @@ export class AnalysisService {
 
     const klines = await this.cryptoService.getKlines(symbol, timeframe, 20);
     if (!klines.data || klines.data.length < 5) {
-      return { symbol, patterns: [] };
+      return { symbol, patterns: [], source: klines.source };
     }
 
     const candles = klines.data.slice(-10);
@@ -150,7 +151,7 @@ export class AnalysisService {
       }
     }
 
-    const result = { symbol, patterns };
+    const result = { symbol, patterns, source: klines.source };
     await this.cacheService.set(cacheKey, result, 10); // Cache 10s
     return result;
   }
@@ -162,7 +163,7 @@ export class AnalysisService {
 
     const klines = await this.cryptoService.getKlines(symbol, timeframe, 5);
     if (!klines.data || klines.data.length < 2) {
-      return { symbol, support: [], resistance: [] };
+      return { symbol, support: [], resistance: [], source: klines.source };
     }
 
     // Use the last COMPLETED candle (second to last), not the current open one
@@ -178,6 +179,7 @@ export class AnalysisService {
     const result = {
       symbol,
       pivot,
+      source: klines.source,
       resistance: [
         { level: 'R1', price: r1 },
         { level: 'R2', price: r2 },

@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { CacheService, DbService } from 'src/libs';
 
 const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
-const BINANCE_BASE = 'https://data-api.binance.vision/api/v3';
+const BINANCE_BASE = 'https://api.binance.com/api/v3';
 const VALID_INTERVALS = ['15m', '30m', '1h', '4h', '1d', '1w'] as const;
 
 // Pre-populated top symbols for fast lookup without needing /coins/list
@@ -232,7 +232,9 @@ export class CryptoService {
           return result;
         }
 
-        this.logger.warn(`Stale/empty Binance data for ${pair} ${interval} — falling back to CoinGecko`);
+        const lastCloseTime = raw[raw.length - 1]?.[6];
+        const delayMin = lastCloseTime ? Math.round((Date.now() - lastCloseTime) / 60_000) : '?';
+        this.logger.warn(`Stale/empty Binance data for ${pair} ${interval} (delay: ${delayMin}min) — falling back to CoinGecko`);
       } else {
         const body = await response.text().catch(() => '');
         this.logger.warn(`Binance API error: ${response.status} for ${pair} ${interval} — ${body}`);

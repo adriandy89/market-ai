@@ -52,6 +52,11 @@ export class AiService {
 
     const marketContext = JSON.stringify({ price, indicators, patterns, levels }, null, 2);
 
+    const usingFallback = indicators?.source === 'coingecko' || patterns?.source === 'coingecko' || levels?.source === 'coingecko';
+    const fallbackWarning = usingFallback
+      ? '\n\n**NOTE:** Some technical data was sourced from CoinGecko (fallback) instead of Binance. Volume data may be unavailable and candle granularity may be lower. Factor this data quality limitation into your confidence assessments.'
+      : '';
+
     let aiAnalysis: string;
     try {
       const response = await this.anthropic.messages.create({
@@ -98,7 +103,7 @@ ${langInstruction}`,
         messages: [
           {
             role: 'user',
-            content: `Analyze ${symbol} on the ${timeframe} timeframe. Here is the current market data:\n\n${marketContext}`,
+            content: `Analyze ${symbol} on the ${timeframe} timeframe. Here is the current market data:\n\n${marketContext}${fallbackWarning}`,
           },
         ],
         temperature: 0.2,
@@ -252,6 +257,20 @@ ${langInstruction}`,
       if (m.macroEvents?.length > 0) {
         promptSections.push(`Macro Events:\n${m.macroEvents.slice(0, 3).map((n) => `- ${n.title}`).join('\n')}`);
       }
+    }
+
+    // Detect if any timeframe used CoinGecko fallback
+    const fallbackTimeframes: string[] = [];
+    if (multiTfData?.timeframes) {
+      for (const tf of ['4h', '1d', '1w'] as const) {
+        const tfData = multiTfData.timeframes[tf];
+        if (tfData?.indicators?.source === 'coingecko' || tfData?.patterns?.source === 'coingecko' || tfData?.levels?.source === 'coingecko') {
+          fallbackTimeframes.push(tf);
+        }
+      }
+    }
+    if (fallbackTimeframes.length > 0) {
+      promptSections.push(`\n## ⚠️ DATA QUALITY NOTE\nTimeframes using CoinGecko fallback data (lower granularity, no volume): ${fallbackTimeframes.join(', ')}. Factor this limitation into your confidence assessments.`);
     }
 
     const userMessage = promptSections.join('\n');
