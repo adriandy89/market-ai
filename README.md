@@ -56,14 +56,21 @@
 
 Create a `.env` file at the project root from `.env.example`
 
+### Stack Docker
+
+In folder: stack-docker
+
+```bash
+docker compose up -d
+```
 
 ### Backend
 
 ```bash
 pnpm install
-npx prisma migrate dev
+npx prisma migrate deploy
 npx prisma generate
-npm run start:dev
+pnpm start:dev
 ```
 
 The API will be available at `http://localhost:3001`.
@@ -73,7 +80,7 @@ The API will be available at `http://localhost:3001`.
 ```bash
 cd frontend
 pnpm install
-npx ng serve --proxy-config proxy.conf.json
+pnpm start
 ```
 
 The app will be available at `http://localhost:4201`.
@@ -81,26 +88,8 @@ The app will be available at `http://localhost:4201`.
 ### Docker
 
 ```bash
-docker compose up --build
+docker compose up -d
 ```
-
-## API Overview
-
-| Endpoint | Description |
-|----------|-------------|
-| `POST /api/v1/auth/signin` | User login |
-| `POST /api/v1/auth/signup` | User registration |
-| `GET /api/v1/crypto/top?limit=200` | Top cryptocurrencies |
-| `GET /api/v1/crypto/search?q=` | Search coins |
-| `GET /api/v1/crypto/klines/:symbol` | OHLCV candlestick data |
-| `GET /api/v1/analysis/:symbol/indicators` | Technical indicators |
-| `GET /api/v1/analysis/:symbol/patterns` | Candlestick patterns |
-| `GET /api/v1/analysis/:symbol/levels` | Support & resistance levels |
-| `GET /api/v1/market-context/:symbol/news` | Crypto news |
-| `GET /api/v1/market-context/sentiment` | Market sentiment |
-| `POST /api/v1/ai/report/:symbol` | Generate AI report |
-| `POST /api/v1/ai/report/:symbol/comprehensive` | Generate comprehensive AI report |
-| `GET /api/v1/ai/reports` | List user reports |
 
 ## Project Structure
 
